@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #0A0A0A;
+}
+
+@layer base {
+  * {
+    border-color: #E4E4E7;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-archivo), sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: var(--font-anton), var(--font-archivo-black), sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    word-spacing: 0.08em;
+  }
+}
+
+/* Custom selection styling */
+::selection {
+  background-color: #7C3AED;
+  color: #FFFFFF;
+}
+
+/* Smooth scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+::-webkit-scrollbar-thumb {
+  background: #7C3AED;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C6F135;
+}
+
+/* Awards-style solid badge utilities */
+.badge-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+}
+
+/* Ghost typography effect */
+.ghost-text {
+  -webkit-text-stroke: 1.5px rgba(10, 10, 10, 0.15);
+  color: transparent;
+}
+
+.ghost-text-white {
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.2);
+  color: transparent;
+}
+
+/* Flat hard card */
+.flat-card {
+  background: #FFFFFF;
+  border: 2px solid #0A0A0A;
+  border-radius: 1.25rem;
+  box-shadow: 4px 4px 0px #0A0A0A;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.flat-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #0A0A0A;
+}
+
+/* Hide horizontal scrollbar but keep scrollability */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
