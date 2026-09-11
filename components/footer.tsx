@@ -1,13 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, Layers } from "lucide-react";
+import Image from "next/image";
+import { ArrowUpRight } from "lucide-react";
 import CountdownWidget from "@/components/countdown-widget";
+import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-brand-violet text-white pt-16 pb-12 overflow-hidden border-t-4 border-brand-ink">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="relative w-full bg-brand-violet text-white pt-16 pb-12 overflow-hidden border-t-4 border-brand-ink">
+      <AnimatedGridPattern
+        numSquares={30}
+        maxOpacity={0.10}
+        duration={4}
+        repeatDelay={1}
+        className="[mask-image:radial-gradient(600px_circle_at_center,white,transparent)] inset-0 text-white"
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Main Footer Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pb-16 border-b border-white/20">
@@ -16,12 +25,18 @@ export default function Footer() {
           <div className="lg:col-span-4 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-white text-brand-violet flex items-center justify-center font-display text-2xl font-black">
-                  CV
+                <div className="w-12 h-12 rounded-2xl bg-white overflow-hidden p-1 shadow-md flex items-center justify-center">
+                  <Image
+                    src="/Cabinet Assets/cabinet-square-logo-white-bg.png"
+                    alt="Cabinet Valley Logo"
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div>
                   <h3 className="font-display text-2xl font-black uppercase text-white leading-none">
-                    CABINET VALLEY<span className="text-brand-lime">®</span>
+                    CABINET VALLEY
                   </h3>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-white/80">
                     ANNUAL STUDENT FEST 2026
@@ -30,7 +45,7 @@ export default function Footer() {
               </div>
 
               <p className="text-xs text-white/80 font-medium max-w-sm mb-6">
-                Organized by the Student Cabinet. 3 days of high-intensity startup battles, real-time trading simulations, and 40+ dynamic retail stalls.
+                Organized by the Student Cabinet. 3 days of high-intensity startup battles, real-time trading simulations, and 50+ dynamic retail & food stalls.
               </p>
             </div>
 
@@ -116,12 +131,6 @@ export default function Footer() {
               <li>
                 <Link href="/register" className="hover:text-brand-lime transition-colors">
                   Registration
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="text-white/60 hover:text-white flex items-center gap-1 transition-colors">
-                  <Layers className="w-3 h-3" />
-                  Admin Portal
                 </Link>
               </li>
             </ul>

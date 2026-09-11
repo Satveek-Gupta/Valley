@@ -28,6 +28,7 @@ export default {
       fontFamily: {
         display: ["var(--font-anton)", "sans-serif"],
         displayAlt: ["var(--font-archivo-black)", "sans-serif"],
+        syne: ["var(--font-syne)", "sans-serif"],
         sans: ["var(--font-archivo)", "sans-serif"],
       },
       letterSpacing: {

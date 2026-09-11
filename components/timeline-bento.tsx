@@ -3,11 +3,19 @@
 import Link from "next/link";
 import { ArrowUpRight, Calendar, Sparkles, MapPin, Clock } from "lucide-react";
 import { TIMELINE_SCHEDULE } from "@/lib/mock-data";
+import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function TimelineBento() {
   return (
-    <section id="timeline" className="w-full py-16 sm:py-24 bg-[#F8F8F8] border-b border-brand-ink/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="timeline" className="relative w-full py-16 sm:py-24 bg-[#F8F8F8] border-b border-brand-ink/10 overflow-hidden">
+      <AnimatedGridPattern
+        numSquares={40}
+        maxOpacity={0.12}
+        duration={3.5}
+        repeatDelay={1}
+        className="[mask-image:radial-gradient(700px_circle_at_center,white,transparent)] inset-0 text-brand-violet"
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -49,7 +57,7 @@ export default function TimelineBento() {
               </h3>
 
               <p className="text-xs sm:text-sm text-white/90 font-medium max-w-lg mb-6">
-                40+ commercial & food stalls across German Hangar and D5 Stage Ground, followed by the high-velocity 3-round Startup Roulette pitch competition.
+                50+ commercial & food stalls across German Hangar and D5 Stage Ground, followed by the high-velocity 3-round Startup Roulette pitch competition.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">

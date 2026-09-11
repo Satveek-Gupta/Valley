@@ -57,7 +57,7 @@ export const EVENTS_DATA: EventItem[] = [
     name: "BAY AREA STALLS",
     day: 1,
     dateLabel: "DAY 01 & 02",
-    tagline: "40+ Premier High-Footfall Commercial & Food Stalls",
+    tagline: "50+ Premier High-Footfall Commercial & Food Stalls",
     description: "The commercial heartbeat of Cabinet Valley. Student startups, brand pop-ups, merchandise booths, and culinary outlets across 2 high-energy days.",
     teamSize: "Individual / Startup Teams",
     format: "2-Day Expo Floor",
@@ -68,7 +68,7 @@ export const EVENTS_DATA: EventItem[] = [
     iconName: "Store",
     featured: true,
     rounds: [
-      { round: 1, title: "Main Stalls (40 Units)", desc: "German Hangar · ₹4,000 per stall · Dedicated power & spotlight booths." },
+      { round: 1, title: "Main Stalls (50 Units)", desc: "German Hangar · ₹4,000 per stall · Dedicated power & spotlight booths." },
       { round: 2, title: "Food Stalls", desc: "D5 Stage Ground · Continuous live festival dining till 6:00 PM." }
     ],
     rewards: [
@@ -269,18 +269,22 @@ export const TIMELINE_SCHEDULE = [
 export const STATS_METRICS = [
   { value: "3 DAYS", label: "TOTAL DURATION", highlight: false },
   { value: "6 EVENTS", label: "COMPETITIONS & EXPO", highlight: true },
-  { value: "40+ STALLS", label: "BAY AREA FLOOR", highlight: false },
+  { value: "50+ STALLS", label: "BAY AREA FLOOR", highlight: false },
   { value: "₹1,00,000+", label: "PRIZE POOL & GRANTS", highlight: false },
   { value: "2,000+", label: "ATTENDEES EXPECTED", highlight: false }
 ];
 
-export const LEADERBOARD_PREVIEW = [
-  { rank: 1, name: "Aditya Verma", handle: "@adityav", score: 9850, portfolio: "₹4,82,500", change: "+24.8%", badge: "Alpha Trader" },
-  { rank: 2, name: "Sneha Rao", handle: "@sneharao_fin", score: 9420, portfolio: "₹4,21,000", change: "+18.2%", badge: "Market Maker" },
-  { rank: 3, name: "Kabir Sharma", handle: "@kabir_trader", score: 9100, portfolio: "₹3,95,400", change: "+14.5%", badge: "Hedge Master" },
-  { rank: 4, name: "Ananya Deshmukh", handle: "@ananya_d", score: 8850, portfolio: "₹3,60,000", change: "+9.1%", badge: "Quant Analyst" },
-  { rank: 5, name: "Rohan Mehta", handle: "@rohanm_quant", score: 8600, portfolio: "₹3,42,100", change: "+7.4%", badge: "Arbitrageur" }
-];
+export interface LeaderboardItem {
+  rank: number;
+  name: string;
+  handle: string;
+  score: number;
+  portfolio: string;
+  change: string;
+  badge: string;
+}
+
+export const LEADERBOARD_PREVIEW: LeaderboardItem[] = [];
 
 export const SPONSORS_LIST = [
   { name: "Apex Ventures", tier: "Title Partner", category: "Venture Capital" },

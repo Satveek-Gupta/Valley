@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       success: true,
       registrationId: submissionId,
       submissionCode: submissionId,
-      message: "Registration successfully confirmed (mock mode)",
+      message: "Registration successfully confirmed",
       data: record,
     });
   } catch (error: any) {

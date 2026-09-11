@@ -9,7 +9,7 @@ interface CountdownWidgetProps {
 }
 
 export default function CountdownWidget({
-  targetDate = process.env.NEXT_PUBLIC_COUNTDOWN_TARGET || "2026-10-14T09:00:00+05:30",
+  targetDate = process.env.NEXT_PUBLIC_COUNTDOWN_TARGET || "2026-09-24T09:00:00+05:30",
   theme = "violet",
   compact = false,
 }: CountdownWidgetProps) {

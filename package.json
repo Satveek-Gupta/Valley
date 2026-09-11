@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.47.10",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "embla-carousel-react": "^8.6.0",
     "lenis": "^1.1.20",
     "lucide-react": "^0.469.0",
     "motion": "^11.16.0",

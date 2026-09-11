@@ -34,15 +34,14 @@ export default function Hero() {
 
             {/* Giant Stacked Title */}
             <div className="relative z-10 flex flex-col">
-              <h1 className="font-display font-black uppercase text-brand-ink flex flex-col space-y-1 sm:space-y-2">
-                <span className="text-6xl sm:text-8xl lg:text-[108px] leading-none tracking-normal">
+              <h1 className="font-display font-black uppercase text-black flex flex-col space-y-1 sm:space-y-1.5 tracking-tight">
+                <span className="text-6xl sm:text-8xl lg:text-[112px] xl:text-[124px] leading-[0.88]">
                   CABINET
                 </span>
-                <span className="text-6xl sm:text-8xl lg:text-[108px] leading-none tracking-normal flex items-baseline">
+                <span className="text-6xl sm:text-8xl lg:text-[112px] xl:text-[124px] leading-[0.88]">
                   VALLEY
-                  <span className="text-2xl sm:text-4xl lg:text-5xl text-brand-violet ml-2 sm:ml-3 align-super font-mono font-bold">®</span>
                 </span>
-                <span className="text-5xl sm:text-7xl lg:text-[96px] leading-none tracking-wider text-brand-ink/90">
+                <span className="text-5xl sm:text-7xl lg:text-[96px] xl:text-[108px] leading-[0.88] text-black">
                   2026
                 </span>
               </h1>
@@ -67,7 +66,7 @@ export default function Hero() {
                   </div>
                   <div className="w-px h-8 bg-white/20" />
                   <div>
-                    <div className="font-display text-2xl sm:text-3xl font-bold leading-none">40+</div>
+                    <div className="font-display text-2xl sm:text-3xl font-bold leading-none">50+</div>
                     <div className="text-[9px] uppercase tracking-wider text-white/70 mt-1 font-bold">STALLS</div>
                   </div>
                 </div>
@@ -146,7 +145,7 @@ export default function Hero() {
         {/* Bottom Hero Manifesto Line */}
         <div className="mt-8 max-w-4xl">
           <p className="font-display text-2xl sm:text-3xl lg:text-4xl uppercase tracking-wide text-brand-ink leading-snug">
-            CABINET VALLEY® BRINGS TOGETHER{" "}
+            CABINET VALLEY BRINGS TOGETHER{" "}
             <span className="text-brand-violet underline decoration-wavy decoration-2">FOUNDERS</span>,{" "}
             <span className="text-[#FF5A36]">CREATORS</span>,{" "}
             <span className="text-[#2F6FED]">BUILDERS</span>,{" "}

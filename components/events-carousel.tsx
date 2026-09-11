@@ -1,26 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowUpRight, Sparkles, X, CheckCircle2, Award, MapPin, Clock, Users } from "lucide-react";
+import { ArrowUpRight, Sparkles, X, CheckCircle2, Award, MapPin, Clock, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { EVENTS_DATA, EventItem } from "@/lib/mock-data";
 import CountdownWidget from "@/components/countdown-widget";
+import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 export default function EventsCarousel() {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
   const [selectedEventModal, setSelectedEventModal] = useState<EventItem | null>(null);
 
-  const handlePrev = () => {
-    setActiveIndex((prev) => (prev === 0 ? EVENTS_DATA.length - 1 : prev - 1));
-  };
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
 
-  const handleNext = () => {
-    setActiveIndex((prev) => (prev === EVENTS_DATA.length - 1 ? 0 : prev + 1));
-  };
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap() + 1);
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap() + 1);
+    });
+  }, [api]);
 
   return (
-    <section id="events" className="w-full py-16 sm:py-24 bg-[#FAFAFA] border-b border-brand-ink/10 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="events" className="relative w-full py-16 sm:py-24 bg-[#FAFAFA] border-b border-brand-ink/10 overflow-hidden">
+      <AnimatedGridPattern
+        numSquares={35}
+        maxOpacity={0.12}
+        duration={3.5}
+        repeatDelay={1}
+        className="[mask-image:radial-gradient(650px_circle_at_center,white,transparent)] inset-0 text-brand-violet"
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -47,102 +68,115 @@ export default function EventsCarousel() {
           </div>
         </div>
 
-        {/* Carousel Viewport */}
-        <div className="relative w-full py-6">
-          <div className="flex items-stretch justify-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar py-4 px-2">
-            {EVENTS_DATA.map((event, index) => {
-              const isActive = index === activeIndex;
+        {/* Shadcn / Embla Carousel Viewport */}
+        <div className="relative w-full">
+          <Carousel
+            setApi={setApi}
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-3 sm:-ml-4">
+              {EVENTS_DATA.map((event, index) => {
+                const isSelected = current === index + 1;
 
-              return (
-                <div
-                  key={event.id}
-                  onClick={() => setActiveIndex(index)}
-                  className={`cursor-pointer transition-all duration-300 flex-shrink-0 w-[280px] sm:w-[320px] rounded-3xl p-6 flex flex-col justify-between select-none ${
-                    isActive
-                      ? "bg-brand-violet text-white scale-105 shadow-2xl shadow-brand-violet/40 ring-4 ring-brand-violet/20 z-20"
-                      : "bg-white text-brand-ink border-2 border-brand-ink/10 hover:border-brand-ink/40 opacity-85 hover:opacity-100 scale-95 z-10"
-                  }`}
-                >
-                  {/* Top: Day tag & Event name */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span
-                        className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-                          isActive
-                            ? "bg-white text-brand-violet"
-                            : "bg-brand-surface text-brand-ink"
-                        }`}
-                      >
-                        {event.dateLabel}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wider ${
-                          isActive ? "text-brand-lime" : "text-zinc-500"
-                        }`}
-                      >
-                        {event.teamSize}
-                      </span>
-                    </div>
-
-                    <h3 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-wide leading-none mb-3">
-                      {event.name}
-                    </h3>
-
-                    <p
-                      className={`text-xs font-medium line-clamp-3 mb-4 ${
-                        isActive ? "text-white/90" : "text-zinc-600"
+                return (
+                  <CarouselItem
+                    key={event.id}
+                    className="pl-3 sm:pl-4 basis-[88%] sm:basis-[48%] lg:basis-[33.333%]"
+                  >
+                    <div
+                      onClick={() => setSelectedEventModal(event)}
+                      className={`h-full cursor-pointer transition-all duration-300 rounded-3xl p-6 sm:p-7 flex flex-col justify-between select-none ${
+                        isSelected
+                          ? "bg-brand-violet text-white shadow-xl shadow-brand-violet/25 ring-2 ring-brand-violet"
+                          : "bg-white text-brand-ink border-2 border-brand-ink/10 hover:border-brand-ink/40 shadow-sm hover:shadow-md"
                       }`}
                     >
-                      {event.description}
-                    </p>
-                  </div>
+                      {/* Top: Day tag & Event name */}
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
+                              isSelected
+                                ? "bg-white text-brand-violet"
+                                : "bg-brand-surface text-brand-ink"
+                            }`}
+                          >
+                            {event.dateLabel}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-wider ${
+                              isSelected ? "text-brand-lime" : "text-zinc-500"
+                            }`}
+                          >
+                            {event.teamSize}
+                          </span>
+                        </div>
 
-                  {/* Bottom: Rounds info & detail button */}
-                  <div className="pt-4 border-t border-current/10">
-                    <div className="flex items-center justify-between">
-                      <div className="text-[11px] font-black uppercase tracking-wider">
-                        {event.rounds.length} {event.rounds.length === 1 ? "SESSION" : "ROUNDS"}
+                        <h3 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-wide leading-none mb-3">
+                          {event.name}
+                        </h3>
+
+                        <p
+                          className={`text-xs font-medium line-clamp-3 mb-4 leading-relaxed ${
+                            isSelected ? "text-white/90" : "text-zinc-600"
+                          }`}
+                        >
+                          {event.description}
+                        </p>
                       </div>
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedEventModal(event);
-                        }}
-                        className={`inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider underline underline-offset-4 ${
-                          isActive ? "text-brand-lime hover:text-white" : "text-brand-violet hover:text-black"
-                        }`}
-                      >
-                        <span>VIEW DETAILS</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      {/* Bottom: Rounds info & detail button */}
+                      <div className="pt-4 border-t border-current/10">
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11px] font-black uppercase tracking-wider">
+                            {event.rounds.length} {event.rounds.length === 1 ? "SESSION" : "ROUNDS"}
+                          </div>
 
-          {/* Navigation Arrows */}
-          <div className="flex items-center justify-center gap-4 mt-8">
-            <button
-              onClick={handlePrev}
-              aria-label="Previous Event"
-              className="w-12 h-12 rounded-full bg-white border-2 border-brand-ink text-brand-ink hover:bg-brand-ink hover:text-white flex items-center justify-center transition-all shadow-md active:scale-95"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <div className="font-mono text-sm font-black tracking-wider text-brand-ink">
-              {String(activeIndex + 1).padStart(2, "0")} / {String(EVENTS_DATA.length).padStart(2, "0")}
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider underline underline-offset-4 ${
+                              isSelected ? "text-brand-lime hover:text-white" : "text-brand-violet hover:text-black"
+                            }`}
+                          >
+                            <span>VIEW DETAILS</span>
+                            <ArrowUpRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+
+            {/* Navigation Controls Bar */}
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <button
+                type="button"
+                onClick={() => api?.scrollPrev()}
+                aria-label="Previous slide"
+                className="w-12 h-12 rounded-full bg-white border-2 border-brand-ink text-brand-ink hover:bg-brand-ink hover:text-white flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              
+              <div className="font-mono text-sm font-black tracking-wider text-brand-ink min-w-[70px] text-center">
+                {String(current || 1).padStart(2, "0")} / {String(count || EVENTS_DATA.length).padStart(2, "0")}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => api?.scrollNext()}
+                aria-label="Next slide"
+                className="w-12 h-12 rounded-full bg-white border-2 border-brand-ink text-brand-ink hover:bg-brand-ink hover:text-white flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
             </div>
-            <button
-              onClick={handleNext}
-              aria-label="Next Event"
-              className="w-12 h-12 rounded-full bg-white border-2 border-brand-ink text-brand-ink hover:bg-brand-ink hover:text-white flex items-center justify-center transition-all shadow-md active:scale-95"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
+          </Carousel>
         </div>
 
       </div>

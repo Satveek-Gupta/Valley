@@ -1,11 +1,19 @@
 "use client";
 
 import { STATS_METRICS } from "@/lib/mock-data";
+import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function StatsBand() {
   return (
-    <section className="w-full bg-brand-ink text-white py-10 sm:py-14 border-y-4 border-brand-violet">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative w-full bg-brand-ink text-white py-10 sm:py-14 border-y-4 border-brand-violet overflow-hidden">
+      <AnimatedGridPattern
+        numSquares={25}
+        maxOpacity={0.15}
+        duration={3}
+        repeatDelay={1}
+        className="[mask-image:radial-gradient(500px_circle_at_center,white,transparent)] inset-0 text-brand-lime"
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-4 items-center justify-between text-center">
           {STATS_METRICS.map((stat, idx) => (
             <div

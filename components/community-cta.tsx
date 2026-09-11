@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { ArrowUpRight, Users, Sparkles, Store } from "lucide-react";
+import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function CommunityCTA() {
   return (
-    <section className="w-full py-20 sm:py-28 bg-white text-brand-ink text-center">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative w-full py-20 sm:py-28 bg-white text-brand-ink text-center overflow-hidden border-b border-brand-ink/10">
+      <AnimatedGridPattern
+        numSquares={35}
+        maxOpacity={0.12}
+        duration={3.5}
+        repeatDelay={1}
+        className="[mask-image:radial-gradient(600px_circle_at_center,white,transparent)] inset-0 text-brand-violet"
+      />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Center Icon */}
         <div className="flex justify-center mb-6">

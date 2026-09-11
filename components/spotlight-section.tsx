@@ -2,12 +2,20 @@
 
 import { useState } from "react";
 import { Play, Sparkles, X, Volume2 } from "lucide-react";
+import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function SpotlightSection() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
     <section className="relative w-full bg-brand-violet text-white py-20 sm:py-28 overflow-hidden">
+      <AnimatedGridPattern
+        numSquares={30}
+        maxOpacity={0.12}
+        duration={4}
+        repeatDelay={1}
+        className="[mask-image:radial-gradient(600px_circle_at_center,white,transparent)] inset-0 text-white"
+      />
       
       {/* Background Ghosted Typography */}
       <div className="absolute inset-0 select-none pointer-events-none flex flex-col justify-center items-center opacity-15 overflow-hidden">
@@ -94,7 +102,7 @@ export default function SpotlightSection() {
                 CABINET VALLEY 2026
               </h4>
               <p className="mt-2 text-sm text-zinc-300 font-bold uppercase tracking-wider max-w-md">
-                Experience the 3-day arena. Live pitches, 40+ Bay Area stalls, and founder mentorship.
+                Experience the 3-day arena. Live pitches, 50+ Bay Area stalls, and founder mentorship.
               </p>
               <button
                 onClick={() => setIsPlaying(false)}

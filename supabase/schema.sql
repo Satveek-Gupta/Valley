@@ -115,12 +115,12 @@ VALUES
     'bay-area',
     'Bay Area Stalls',
     1,
-    '40+ high-energy student & brand storefronts',
+    '50+ high-energy student & brand storefronts',
     'The premier marketplace & startup exhibition floor of Cabinet Valley running across Day 1 & Day 2.',
     'Individual or Team',
     'Exhibition Floor',
     '[
-        {"round": 1, "title": "Main Stalls", "desc": "German Hangar · 40 curated stalls @ ₹4,000 per stall."},
+        {"round": 1, "title": "Main Stalls", "desc": "German Hangar · 50 curated stalls @ ₹4,000 per stall."},
         {"round": 2, "title": "Food Stalls", "desc": "D5 Stage Ground · Continuous live stalls till 6:00 PM."}
     ]'::jsonb,
     'Maximum footfall exhibition, direct student sales, brand partnerships.',
@@ -207,15 +207,15 @@ VALUES
 )
 ON CONFLICT (slug) DO NOTHING;
 
--- Seed Stalls (Main 1-40 + Food 1-10)
+-- Seed Stalls (Main 1-50 + Food 1-10) — All Initialized as Available
 INSERT INTO public.stalls (stall_number, type, venue, price, status)
 SELECT 
     'M-' || LPAD(n::text, 2, '0'),
     'main',
     'German Hangar',
     4000,
-    CASE WHEN n IN (3, 7, 12, 18, 24, 31) THEN 'allocated' ELSE 'available' END
-FROM generate_series(1, 40) AS n
+    'available'
+FROM generate_series(1, 50) AS n
 ON CONFLICT (stall_number) DO NOTHING;
 
 INSERT INTO public.stalls (stall_number, type, venue, price, status)
@@ -224,18 +224,9 @@ SELECT
     'food',
     'D5 Stage Ground',
     4000,
-    CASE WHEN n IN (1, 4, 8) THEN 'allocated' ELSE 'available' END
+    'available'
 FROM generate_series(1, 10) AS n
 ON CONFLICT (stall_number) DO NOTHING;
-
--- Seed Leaderboard
-INSERT INTO public.leaderboard (player_name, handle, score, portfolio_value, rank)
-VALUES
-('Aditya Verma', '@adityav', 9850, 482500.00, 1),
-('Sneha Rao', '@sneharao_fin', 9420, 421000.00, 2),
-('Kabir Sharma', '@kabir_trader', 9100, 395400.00, 3),
-('Ananya Deshmukh', '@ananya_d', 8850, 360000.00, 4),
-('Rohan Mehta', '@rohanm_quant', 8600, 342100.00, 5);
 
 -- Enable RLS
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;

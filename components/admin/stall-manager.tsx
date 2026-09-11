@@ -14,36 +14,25 @@ interface Stall {
   price: number;
 }
 
-const initialMainStalls: Stall[] = Array.from({ length: 40 }, (_, i) => {
+const initialMainStalls: Stall[] = Array.from({ length: 50 }, (_, i) => {
   const num = String(i + 1).padStart(2, "0");
-  const isAllocated = [3, 7, 12, 18, 24, 31, 35].includes(i + 1);
-  const isPaid = [3, 12, 24].includes(i + 1);
-
   return {
     id: `M-${num}`,
     number: `M-${num}`,
     type: "main",
     price: 4000,
-    status: isPaid ? "paid" : isAllocated ? "allocated" : "available",
-    businessName: isAllocated ? `Student Startup Studio #${i + 1}` : undefined,
-    contact: isAllocated ? `Lead #${i + 1}` : undefined,
-    phone: isAllocated ? `98100112${num}` : undefined,
+    status: "available",
   };
 });
 
 const initialFoodStalls: Stall[] = Array.from({ length: 10 }, (_, i) => {
   const num = String(i + 1).padStart(2, "0");
-  const isAllocated = [1, 4, 8].includes(i + 1);
-
   return {
     id: `F-${num}`,
     number: `F-${num}`,
     type: "food",
     price: 4000,
-    status: isAllocated ? "paid" : "available",
-    businessName: isAllocated ? `Gourmet Bites #${i + 1}` : undefined,
-    contact: isAllocated ? `Chef #${i + 1}` : undefined,
-    phone: isAllocated ? `98990011${num}` : undefined,
+    status: "available",
   };
 });
 
@@ -134,7 +123,7 @@ export default function StallManager() {
             activeTab === "main" ? "bg-brand-violet text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
           }`}
         >
-          MAIN STALLS (40 UNITS · GERMAN HANGAR)
+          MAIN STALLS (50 UNITS · GERMAN HANGAR)
         </button>
         <button
           onClick={() => setActiveTab("food")}
@@ -172,7 +161,7 @@ export default function StallManager() {
 
           <div
             className={`grid gap-2.5 ${
-              activeTab === "main" ? "grid-cols-5 sm:grid-cols-8" : "grid-cols-2 sm:grid-cols-5"
+              activeTab === "main" ? "grid-cols-5 sm:grid-cols-10" : "grid-cols-2 sm:grid-cols-5"
             }`}
           >
             {currentList.map((stall) => {

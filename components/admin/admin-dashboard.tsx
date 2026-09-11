@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Users,
   Store,
@@ -46,8 +47,14 @@ export default function AdminDashboard({
       <header className="bg-white border-b border-zinc-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-brand-ink text-white flex items-center justify-center font-display text-lg">
-              CV
+            <div className="w-9 h-9 rounded-xl overflow-hidden border border-zinc-200 bg-white p-0.5 shadow-sm flex items-center justify-center">
+              <Image
+                src="/Cabinet Assets/cabinet-square-logo-white-bg.png"
+                alt="Cabinet Valley Logo"
+                width={36}
+                height={36}
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <span className="font-display text-lg font-black uppercase text-brand-ink">
@@ -159,7 +166,7 @@ export default function AdminDashboard({
                   <span className="text-[10px] font-bold uppercase tracking-wider">BAY AREA OCCUPANCY</span>
                   <Store className="w-4 h-4 text-brand-lime" />
                 </div>
-                <div className="font-display text-4xl font-black text-brand-ink">{bayAreaCount} / 40</div>
+                <div className="font-display text-4xl font-black text-brand-ink">{bayAreaCount} / 50</div>
                 <div className="text-[11px] text-zinc-500 font-bold mt-1">German Hangar Main Stalls</div>
               </div>
 

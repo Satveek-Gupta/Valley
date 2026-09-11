@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, Layers } from "lucide-react";
+import Image from "next/image";
+import { ArrowUpRight } from "lucide-react";
 
 export default function Navbar() {
   return (
@@ -9,8 +10,15 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
         {/* Left: Brandmark */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-brand-ink text-white rounded-xl flex items-center justify-center font-display text-xl transition-transform group-hover:rotate-6 group-hover:bg-brand-violet">
-            CV
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden border border-brand-ink/10 flex items-center justify-center bg-white shadow-sm transition-transform group-hover:scale-105">
+            <Image
+              src="/Cabinet Assets/cabinet-square-logo-white-bg.png"
+              alt="Cabinet Valley Logo"
+              width={40}
+              height={40}
+              className="w-full h-full object-contain p-0.5"
+              priority
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-display text-lg sm:text-xl font-bold tracking-wide text-brand-ink leading-none">
@@ -28,7 +36,7 @@ export default function Navbar() {
             OVERVIEW
           </Link>
           <Link href="#events" className="hover:text-brand-violet transition-colors">
-            EVENTS (6)
+            EVENTS
           </Link>
           <Link href="#timeline" className="hover:text-brand-violet transition-colors">
             TIMELINE
@@ -45,7 +53,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-brand-surface rounded-full border border-brand-border text-[11px] font-bold uppercase tracking-wider text-brand-ink">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-            <span>OCT 14–16</span>
+            <span>SEPT 24–26</span>
           </div>
 
           <Link

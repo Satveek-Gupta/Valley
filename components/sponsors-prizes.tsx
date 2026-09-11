@@ -2,11 +2,19 @@
 
 import { Award, Briefcase, Sparkles, Trophy } from "lucide-react";
 import { SPONSORS_LIST, PRIZE_HIGHLIGHTS } from "@/lib/mock-data";
+import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function SponsorsPrizes() {
   return (
-    <section id="sponsors" className="w-full py-16 sm:py-24 bg-white border-b border-brand-ink/10 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
+    <section id="sponsors" className="relative w-full py-16 sm:py-24 bg-white border-b border-brand-ink/10 overflow-hidden">
+      <AnimatedGridPattern
+        numSquares={35}
+        maxOpacity={0.12}
+        duration={3.5}
+        repeatDelay={1}
+        className="[mask-image:radial-gradient(650px_circle_at_center,white,transparent)] inset-0 text-brand-violet"
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 relative z-10">
         
         {/* Section Header: Prizes */}
         <div className="text-center max-w-3xl mx-auto mb-12">
