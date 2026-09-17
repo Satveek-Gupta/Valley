@@ -31,7 +31,7 @@ const archivo = Archivo({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://valley.bucabinet.in";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
