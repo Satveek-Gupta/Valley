@@ -4,9 +4,34 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import RegistrationForm from "@/components/register/registration-form";
 import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
-export const metadata = {
-  title: "Register — CABINET VALLEY 2026",
-  description: "Official registration portal for Cabinet Valley. Select your competitive tracks, startup teams, and Bay Area stalls.",
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Register & Join Tracks | CABINET VALLEY 2026",
+  description: "Official registration portal for Cabinet Valley 2026. Register for Startup Roulette, The War Room, The Boardroom, Entre-Prenormie, Bulls & Bears, or book a Bay Area stall.",
+  keywords: [
+    "Cabinet Valley Registration",
+    "Startup Roulette Registration",
+    "The War Room",
+    "The Boardroom Case Study",
+    "Bay Area Stalls Booking",
+    "Bulls and Bears Trading",
+    "Student Fest Registration 2026"
+  ],
+  alternates: {
+    canonical: "/register",
+  },
+  openGraph: {
+    title: "Register for CABINET VALLEY 2026",
+    description: "Secure your pass for 3 days of startup battles, trading competitions, and Bay Area stalls.",
+    url: "/register",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Register for CABINET VALLEY 2026",
+    description: "Secure your pass for 3 days of startup battles, trading competitions, and Bay Area stalls.",
+  },
 };
 
 export default function RegisterPage() {

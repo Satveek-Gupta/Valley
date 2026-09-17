@@ -177,7 +177,7 @@ export const TIMELINE_SCHEDULE = [
   {
     dayNumber: "01",
     dayTitle: "DAY ONE",
-    date: "OCTOBER 14, 2026",
+    date: "SEPTEMBER 24, 2026",
     summary: "Kickoff, Bay Area Expo Inauguration & Startup Roulette",
     featuredEvent: EVENTS_DATA[0],
     subEvents: [
@@ -207,7 +207,7 @@ export const TIMELINE_SCHEDULE = [
   {
     dayNumber: "02",
     dayTitle: "DAY TWO",
-    date: "OCTOBER 15, 2026",
+    date: "SEPTEMBER 25, 2026",
     summary: "The War Room Asset Bidding & The Boardroom Case Resolution",
     featuredEvent: EVENTS_DATA[2],
     subEvents: [
@@ -237,7 +237,7 @@ export const TIMELINE_SCHEDULE = [
   {
     dayNumber: "03",
     dayTitle: "DAY THREE",
-    date: "OCTOBER 16, 2026",
+    date: "SEPTEMBER 26, 2026",
     summary: "Founder Mentorship, Bulls & Bears Quiz, Grand Rewarding Ceremony",
     featuredEvent: EVENTS_DATA[5],
     subEvents: [
@@ -271,7 +271,7 @@ export const STATS_METRICS = [
   { value: "6 EVENTS", label: "COMPETITIONS & EXPO", highlight: true },
   { value: "50+ STALLS", label: "BAY AREA FLOOR", highlight: false },
   { value: "₹1,00,000+", label: "PRIZE POOL & GRANTS", highlight: false },
-  { value: "2,000+", label: "ATTENDEES EXPECTED", highlight: false }
+  { value: "15,000+", label: "ATTENDEES EXPECTED", highlight: false }
 ];
 
 export interface LeaderboardItem {

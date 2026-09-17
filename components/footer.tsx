@@ -52,7 +52,7 @@ export default function Footer() {
             {/* Tag pills */}
             <div className="flex flex-wrap gap-2">
               <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/40 text-white border border-white/10">
-                OCTOBER 14–16
+                SEPTEMBER 24–26
               </span>
               <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-lime text-black font-bold">
                 6 TRACKS

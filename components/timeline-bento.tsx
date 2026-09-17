@@ -49,7 +49,7 @@ export default function TimelineBento() {
                 <span className="px-3 py-1 rounded-full bg-white/20 text-brand-lime text-xs font-black uppercase tracking-wider">
                   FEATURED EXPO & PITCH
                 </span>
-                <span className="font-mono text-xs font-bold text-white/80">OCTOBER 14, 2026</span>
+                <span className="font-mono text-xs font-bold text-white/80">SEPTEMBER 24, 2026</span>
               </div>
 
               <h3 className="font-display text-3xl sm:text-5xl font-black uppercase tracking-wide text-white mb-3">
@@ -101,7 +101,7 @@ export default function TimelineBento() {
                 <span className="px-3 py-1 rounded-full bg-[#2F6FED] text-white text-xs font-black uppercase tracking-wider">
                   DAY 02 · BIDDING
                 </span>
-                <span className="font-mono text-xs font-bold text-zinc-400">OCT 15</span>
+                <span className="font-mono text-xs font-bold text-zinc-400">SEP 25</span>
               </div>
 
               <h3 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-wide text-brand-ink mb-2">
@@ -144,7 +144,7 @@ export default function TimelineBento() {
                 <span className="px-3 py-1 rounded-full bg-[#FF5A36] text-white text-xs font-black uppercase tracking-wider">
                   DAY 02 · CASE STUDY
                 </span>
-                <span className="font-mono text-xs font-bold text-zinc-400">OCT 15</span>
+                <span className="font-mono text-xs font-bold text-zinc-400">SEP 25</span>
               </div>
 
               <h3 className="font-display text-2xl font-black uppercase text-brand-ink mb-2">
@@ -174,7 +174,7 @@ export default function TimelineBento() {
                 <span className="px-3 py-1 rounded-full bg-brand-violet text-white text-xs font-black uppercase tracking-wider">
                   DAY 03 · 1-TO-1 SESSIONS
                 </span>
-                <span className="font-mono text-xs font-bold text-zinc-400">OCT 16</span>
+                <span className="font-mono text-xs font-bold text-zinc-400">SEP 26</span>
               </div>
 
               <h3 className="font-display text-2xl font-black uppercase text-brand-ink mb-2">
@@ -204,7 +204,7 @@ export default function TimelineBento() {
                 <span className="px-3 py-1 rounded-full bg-brand-lime text-black text-xs font-black uppercase tracking-wider">
                   DAY 03 · FINALE
                 </span>
-                <span className="font-mono text-xs font-bold text-zinc-400">OCT 16</span>
+                <span className="font-mono text-xs font-bold text-zinc-400">SEP 26</span>
               </div>
 
               <h3 className="font-display text-2xl font-black uppercase text-white mb-2">
