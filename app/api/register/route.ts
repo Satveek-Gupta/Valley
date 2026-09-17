@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registrationSchema } from "@/lib/schema";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
-// In-memory fallback store for development/preview when Supabase env keys are not provided
-const fallbackRegistrations: any[] = [];
+// In-memory fallback stores per event for development/preview when Supabase env keys are not provided
+const fallbackStores: Record<string, any[]> = {
+  "startup-roulette": [],
+  "the-war-room": [],
+  "the-boardroom": [],
+  "entre-prenormie": [],
+  "bulls-and-bears": [],
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,71 +17,117 @@ export async function POST(req: NextRequest) {
     const validatedData = registrationSchema.parse(body);
 
     const submissionId = `REG-${Math.floor(100000 + Math.random() * 900000)}`;
+    const eventSlug = validatedData.selectedEvents[0];
     const timestamp = new Date().toISOString();
 
-    if (isSupabaseConfigured && supabase) {
-      // 1. Insert participant
-      const { data: participantData, error: pError } = await supabase
-        .from("participants")
-        .insert({
-          full_name: validatedData.fullName,
-          email: validatedData.email,
-          phone: validatedData.phone,
-        })
-        .select("id")
-        .single();
+    if (isSupabaseConfigured && supabaseAdmin) {
+      let insertedId = submissionId;
 
-      if (pError) throw pError;
+      if (eventSlug === "startup-roulette") {
+        const { data, error } = await supabaseAdmin
+          .from("registrations_startup_roulette")
+          .insert({
+            full_name: validatedData.fullName,
+            email: validatedData.email,
+            phone: validatedData.phone,
+            team_name: validatedData.startupRoulette?.teamName || "",
+            team_leader_name: validatedData.startupRoulette?.teamLeaderName || "",
+            team_members_names: validatedData.startupRoulette?.teamMembersNames || "",
+            idea_name: validatedData.startupRoulette?.ideaName || "",
+            idea_description: validatedData.startupRoulette?.ideaDescription || "",
+            status: "confirmed",
+          })
+          .select("id")
+          .single();
 
-      // 2. Insert registration record
-      const { data: regData, error: rError } = await supabase
-        .from("registrations")
-        .insert({
-          participant_id: participantData.id,
-          confirmed_rules: validatedData.confirmedRules,
-          status: "confirmed",
-        })
-        .select("id")
-        .single();
+        if (error) throw error;
+        if (data?.id) insertedId = data.id;
+      } else if (eventSlug === "the-war-room") {
+        const { data, error } = await supabaseAdmin
+          .from("registrations_the_war_room")
+          .insert({
+            full_name: validatedData.fullName,
+            email: validatedData.email,
+            phone: validatedData.phone,
+            team_name: validatedData.theWarRoom?.teamName || "",
+            team_leader_name: validatedData.theWarRoom?.teamLeaderName || "",
+            team_members_names: validatedData.theWarRoom?.teamMembersNames || "",
+            status: "confirmed",
+          })
+          .select("id")
+          .single();
 
-      if (rError) throw rError;
+        if (error) throw error;
+        if (data?.id) insertedId = data.id;
+      } else if (eventSlug === "the-boardroom") {
+        const { data, error } = await supabaseAdmin
+          .from("registrations_the_boardroom")
+          .insert({
+            full_name: validatedData.fullName,
+            email: validatedData.email,
+            phone: validatedData.phone,
+            team_name: validatedData.theBoardroom?.teamName || "",
+            team_leader_name: validatedData.theBoardroom?.teamLeaderName || "",
+            partner_name: validatedData.theBoardroom?.teamMembersNames || "",
+            status: "confirmed",
+          })
+          .select("id")
+          .single();
 
-      // 3. Insert junction records per selected event
-      const eventRows = validatedData.selectedEvents.map((slug) => {
-        let details: any = {};
-        if (slug === "startup-roulette") details = validatedData.startupRoulette || {};
-        if (slug === "the-war-room") details = validatedData.theWarRoom || {};
-        if (slug === "the-boardroom") details = validatedData.theBoardroom || {};
-        if (slug === "entre-prenormie") details = validatedData.entrePrenormie || {};
-        if (slug === "bay-area") details = validatedData.bayArea || {};
+        if (error) throw error;
+        if (data?.id) insertedId = data.id;
+      } else if (eventSlug === "entre-prenormie") {
+        const { data, error } = await supabaseAdmin
+          .from("registrations_entre_prenormie")
+          .insert({
+            full_name: validatedData.fullName,
+            email: validatedData.email,
+            phone: validatedData.phone,
+            founder_discussion_topic: validatedData.entrePrenormie?.founderDiscussionTopic || "",
+            status: "confirmed",
+          })
+          .select("id")
+          .single();
 
-        return {
-          registration_id: regData.id,
-          event_slug: slug,
-          details,
-        };
-      });
+        if (error) throw error;
+        if (data?.id) insertedId = data.id;
+      } else if (eventSlug === "bulls-and-bears") {
+        const { data, error } = await supabaseAdmin
+          .from("registrations_bulls_and_bears")
+          .insert({
+            full_name: validatedData.fullName,
+            email: validatedData.email,
+            phone: validatedData.phone,
+            status: "confirmed",
+          })
+          .select("id")
+          .single();
 
-      const { error: eError } = await supabase.from("registration_events").insert(eventRows);
-      if (eError) throw eError;
+        if (error) throw error;
+        if (data?.id) insertedId = data.id;
+      }
 
       return NextResponse.json({
         success: true,
-        registrationId: regData.id,
+        registrationId: insertedId,
         submissionCode: submissionId,
-        message: "Registration successfully recorded in Supabase",
+        message: `Registration recorded in table registrations_${eventSlug.replace(/-/g, "_")}`,
         data: validatedData,
       });
     }
 
-    // Fallback in-memory storage
+    // Fallback in-memory storage per event
     const record = {
       id: submissionId,
       ...validatedData,
       createdAt: timestamp,
       status: "confirmed",
     };
-    fallbackRegistrations.unshift(record);
+
+    if (!fallbackStores[eventSlug]) {
+      fallbackStores[eventSlug] = [];
+    }
+    fallbackStores[eventSlug].unshift(record);
 
     return NextResponse.json({
       success: true,
@@ -97,8 +149,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const allRegistrations = Object.values(fallbackStores).flat();
   return NextResponse.json({
-    total: fallbackRegistrations.length,
-    registrations: fallbackRegistrations,
+    total: allRegistrations.length,
+    stores: fallbackStores,
   });
 }
+

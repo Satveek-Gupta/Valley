@@ -57,17 +57,18 @@ export default function TimelineBento() {
               </h3>
 
               <p className="text-xs sm:text-sm text-white/90 font-medium max-w-lg mb-6">
-                50+ commercial & food stalls across German Hangar and D5 Stage Ground, followed by the high-velocity 3-round Startup Roulette pitch competition.
+                50 commercial & startup stalls across German Hangar, followed by the high-velocity 3-round Startup Roulette pitch competition.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 <div className="p-3.5 bg-black/20 rounded-2xl border border-white/10">
                   <div className="text-[10px] font-black uppercase tracking-wider text-brand-lime">
-                    BAY AREA (MAIN & FOOD)
+                    BAY AREA (GERMAN HANGAR)
                   </div>
                   <div className="text-xs font-bold text-white mt-0.5">10:00 AM – 6:00 PM</div>
-                  <div className="text-[11px] text-white/70">German Hangar · ₹4,000/stall</div>
+                  <div className="text-[11px] text-white/70">50 Stalls · Offline Desk Booking</div>
                 </div>
+
 
                 <div className="p-3.5 bg-black/20 rounded-2xl border border-white/10">
                   <div className="text-[10px] font-black uppercase tracking-wider text-[#FF5A36]">
@@ -219,7 +220,7 @@ export default function TimelineBento() {
             <div className="flex items-end justify-between pt-4 border-t border-white/20">
               <div className="font-display text-4xl sm:text-5xl font-black text-brand-lime">03</div>
               <Link
-                href="/register"
+                href="/register?event=bulls-and-bears"
                 className="w-10 h-10 rounded-full bg-brand-violet text-white hover:bg-white hover:text-brand-ink flex items-center justify-center transition-colors"
               >
                 <ArrowUpRight className="w-5 h-5" />

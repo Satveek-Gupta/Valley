@@ -57,7 +57,7 @@ Functional internal tool — doesn't need the marketing-site visual treatment. C
 1. **Dashboard** — total registrations, per-event breakdown, stall fill status
 2. **Registrations** — table of all submissions, filter by event/day, view detail, export CSV
 3. **Event management** — CRUD for event content that drives the public timeline and events showcase
-4. **Stall management & bidding** — manage Bay Area stall inventory (Main/Food), view stall registrations, allocate/confirm stalls, track payment status; extensible to points-based bidding (open question, see §8)
+4. **Stall management & bidding** — manage Bay Area stall inventory (50 Main Stalls in German Hangar), view stall registrations, allocate/confirm stalls, track payment status; extensible to points-based bidding (open question, see §8)
 5. **Sponsors & Prizes** — CRUD for what's shown on the landing page
 6. **Settings** — countdown target datetime, site content toggles
 
@@ -79,8 +79,7 @@ Functional internal tool — doesn't need the marketing-site visual treatment. C
 ### Day 1
 
 **Bay Area**
-- *Main Stalls* — Venue: German Hangar · 40 stalls · ₹4,000 per stall
-- *Food Stalls* — Venue: D5 Stage Ground · Timing: till 6:00 PM
+- *Main Stalls* — Venue: German Hangar · 50 stalls · ₹4,000 per stall
 
 **Startup Roulette**
 - Team size: 5 members · Total teams: 12 · Winning teams: Top 3
@@ -139,7 +138,7 @@ Functional internal tool — doesn't need the marketing-site visual treatment. C
 | The Boardroom | Team Name, Team Leader Name, Team Members' Names |
 | Entre-Prenormie | What would you like to discuss with the founder? *(optional)* |
 | Bulls & Bears | None — individual registration only |
-| Bay Area (stall registration) | Stall Name/Business Name, Contact Person, Phone Number, Type of Stall (Main / Food) |
+| Bay Area (stall registration) | Stall Name/Business Name, Contact Person, Phone Number |
 
 **4. Confirmation**
 - Required checkbox: "I confirm that the information provided is correct and agree to follow the rules and guidelines of Cabinet Valley."
@@ -179,7 +178,7 @@ registration_events (
 
 -- Bay Area stall inventory
 stalls (
-  id, type ('main' | 'food'), label, price,
+  id, type ('main'), label, price,
   status ('available' | 'pending' | 'allocated' | 'paid'),
   registration_event_id -> registration_events,
   created_at

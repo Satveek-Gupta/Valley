@@ -6,12 +6,11 @@ import { Store, CheckCircle2, AlertCircle, IndianRupee, User, Phone } from "luci
 interface Stall {
   id: string;
   number: string;
-  type: "main" | "food";
+  type: "main";
   status: "available" | "pending" | "allocated" | "paid";
   businessName?: string;
   contact?: string;
   phone?: string;
-  price: number;
 }
 
 const initialMainStalls: Stall[] = Array.from({ length: 50 }, (_, i) => {
@@ -20,36 +19,22 @@ const initialMainStalls: Stall[] = Array.from({ length: 50 }, (_, i) => {
     id: `M-${num}`,
     number: `M-${num}`,
     type: "main",
-    price: 4000,
-    status: "available",
-  };
-});
-
-const initialFoodStalls: Stall[] = Array.from({ length: 10 }, (_, i) => {
-  const num = String(i + 1).padStart(2, "0");
-  return {
-    id: `F-${num}`,
-    number: `F-${num}`,
-    type: "food",
-    price: 4000,
     status: "available",
   };
 });
 
 export default function StallManager() {
   const [mainStalls, setMainStalls] = useState<Stall[]>(initialMainStalls);
-  const [foodStalls, setFoodStalls] = useState<Stall[]>(initialFoodStalls);
   const [selectedStall, setSelectedStall] = useState<Stall | null>(null);
-  const [activeTab, setActiveTab] = useState<"main" | "food">("main");
 
-  const currentList = activeTab === "main" ? mainStalls : foodStalls;
+  const currentList = mainStalls;
 
   const totalAllocated = currentList.filter((s) => s.status === "allocated" || s.status === "paid").length;
   const totalPaid = currentList.filter((s) => s.status === "paid").length;
-  const totalRevenue = totalPaid * 4000;
+  const totalAvailable = currentList.filter((s) => s.status === "available").length;
 
   const setStatus = (stallId: string, newStatus: Stall["status"]) => {
-    const updateFn = (prev: Stall[]) =>
+    setMainStalls((prev) =>
       prev.map((s) => {
         if (s.id === stallId) {
           const updated = {
@@ -64,14 +49,12 @@ export default function StallManager() {
           return updated;
         }
         return s;
-      });
-
-    if (activeTab === "main") setMainStalls(updateFn);
-    else setFoodStalls(updateFn);
+      })
+    );
   };
 
   const updateMerchantName = (stallId: string, name: string) => {
-    const updateFn = (prev: Stall[]) =>
+    setMainStalls((prev) =>
       prev.map((s) => {
         if (s.id === stallId) {
           const updated = { ...s, businessName: name };
@@ -79,15 +62,25 @@ export default function StallManager() {
           return updated;
         }
         return s;
-      });
-
-    if (activeTab === "main") setMainStalls(updateFn);
-    else setFoodStalls(updateFn);
+      })
+    );
   };
 
   return (
     <div className="space-y-6">
       
+      {/* Offline Management Notice Banner */}
+      <div className="bg-brand-surface p-4 rounded-2xl border border-brand-border flex items-center justify-between gap-4">
+        <div>
+          <span className="text-[10px] font-black uppercase text-brand-violet bg-brand-violet/10 px-2.5 py-0.5 rounded-md">
+            OFFLINE STALL COORDINATION
+          </span>
+          <p className="text-xs font-bold text-brand-ink mt-1">
+            Bay Area Stalls (German Hangar) are reserved offline via the Student Cabinet desk. Use this floor manager to allocate stalls, record merchant contact names, and update payment statuses.
+          </p>
+        </div>
+      </div>
+
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
@@ -96,44 +89,27 @@ export default function StallManager() {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">ALLOCATED / RESERVED</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">OPEN / AVAILABLE</div>
+          <div className="font-display text-3xl font-black text-emerald-600 mt-1">
+            {totalAvailable} STALLS
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">ALLOCATED / HOLD</div>
           <div className="font-display text-3xl font-black text-brand-violet mt-1">
             {totalAllocated} / {currentList.length}
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">PAID & CONFIRMED</div>
-          <div className="font-display text-3xl font-black text-emerald-600 mt-1">{totalPaid} STALLS</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">REALIZED REVENUE</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">CONFIRMED ALLOTMENTS</div>
           <div className="font-display text-3xl font-black text-brand-ink mt-1">
-            ₹{totalRevenue.toLocaleString()}
+            {totalPaid} UNITS
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-200 pb-3">
-        <button
-          onClick={() => setActiveTab("main")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors ${
-            activeTab === "main" ? "bg-brand-violet text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-          }`}
-        >
-          MAIN STALLS (50 UNITS · GERMAN HANGAR)
-        </button>
-        <button
-          onClick={() => setActiveTab("food")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors ${
-            activeTab === "food" ? "bg-brand-violet text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-          }`}
-        >
-          FOOD STALLS (10 UNITS · D5 STAGE GROUND)
-        </button>
-      </div>
 
       {/* Interactive Grid & Detail Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -142,7 +118,7 @@ export default function StallManager() {
         <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-display text-lg font-bold uppercase text-brand-ink">
-              {activeTab === "main" ? "GERMAN HANGAR FLOOR MAP" : "D5 STAGE FOOD COURT MAP"}
+              GERMAN HANGAR FLOOR MAP (50 UNITS)
             </h4>
             
             {/* Status Legend */}
@@ -159,11 +135,7 @@ export default function StallManager() {
             </div>
           </div>
 
-          <div
-            className={`grid gap-2.5 ${
-              activeTab === "main" ? "grid-cols-5 sm:grid-cols-10" : "grid-cols-2 sm:grid-cols-5"
-            }`}
-          >
+          <div className="grid grid-cols-5 sm:grid-cols-10 gap-2.5">
             {currentList.map((stall) => {
               const isSelected = selectedStall?.id === stall.id;
 
@@ -232,9 +204,10 @@ export default function StallManager() {
                 )}
 
                 <div>
-                  <div className="text-zinc-400 font-bold uppercase text-[10px]">FIXED TARIFF</div>
-                  <div className="font-mono font-bold text-sm text-brand-violet">₹4,000 / FESTIVAL</div>
+                  <div className="text-zinc-400 font-bold uppercase text-[10px]">VENUE</div>
+                  <div className="font-display font-bold text-sm text-brand-ink">GERMAN HANGAR (10x10 FT BOOTH)</div>
                 </div>
+
 
                 {/* 3 Dedicated Action Buttons */}
                 <div className="space-y-2 pt-3 border-t border-zinc-200">

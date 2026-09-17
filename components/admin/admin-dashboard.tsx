@@ -14,31 +14,39 @@ import {
   ArrowUpRight,
   ExternalLink,
   ShieldAlert,
+  Award,
 } from "lucide-react";
 import RegistrationsTable from "./registrations-table";
 import StallManager from "./stall-manager";
 import SettingsForm from "./settings-form";
-import { EVENTS_DATA } from "@/lib/mock-data";
+import EventsManager from "./events-manager";
+import SponsorsManager from "./sponsors-manager";
 
 export default function AdminDashboard({
   initialRegistrations = [],
+  byEvent,
   userEmail,
   onLogout,
+  onDeleteRegistration,
 }: {
   initialRegistrations: any[];
+  byEvent?: any;
   userEmail?: string | null;
   onLogout?: () => void;
+  onDeleteRegistration?: (id: string, eventSlug: string) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"overview" | "registrations" | "stalls" | "settings">("overview");
+
+  const [activeTab, setActiveTab] = useState<"overview" | "registrations" | "events" | "sponsors" | "stalls" | "settings">("overview");
 
   // Calculations
   const totalRegistrations = initialRegistrations.length;
-  const rouletteCount = initialRegistrations.filter((r) => r.selectedEvents?.includes("startup-roulette")).length;
-  const warRoomCount = initialRegistrations.filter((r) => r.selectedEvents?.includes("the-war-room")).length;
-  const boardroomCount = initialRegistrations.filter((r) => r.selectedEvents?.includes("the-boardroom")).length;
-  const entreprenormieCount = initialRegistrations.filter((r) => r.selectedEvents?.includes("entre-prenormie")).length;
-  const bullsCount = initialRegistrations.filter((r) => r.selectedEvents?.includes("bulls-and-bears")).length;
+  const rouletteCount = byEvent?.["startup-roulette"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "startup-roulette" || r.selectedEvents?.includes("startup-roulette")).length;
+  const warRoomCount = byEvent?.["the-war-room"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "the-war-room" || r.selectedEvents?.includes("the-war-room")).length;
+  const boardroomCount = byEvent?.["the-boardroom"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "the-boardroom" || r.selectedEvents?.includes("the-boardroom")).length;
+  const entreprenormieCount = byEvent?.["entre-prenormie"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "entre-prenormie" || r.selectedEvents?.includes("entre-prenormie")).length;
+  const bullsCount = byEvent?.["bulls-and-bears"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "bulls-and-bears" || r.selectedEvents?.includes("bulls-and-bears")).length;
   const bayAreaCount = initialRegistrations.filter((r) => r.selectedEvents?.includes("bay-area")).length;
+
 
   return (
     <div className="min-h-screen bg-[#F4F4F6] text-brand-ink">
@@ -117,6 +125,30 @@ export default function AdminDashboard({
           >
             <Users className="w-3.5 h-3.5" />
             <span>REGISTRATIONS ({totalRegistrations})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("events")}
+            className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 ${
+              activeTab === "events"
+                ? "border-brand-violet text-brand-violet font-black"
+                : "border-transparent hover:text-brand-ink"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>EVENTS & TRACKS</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("sponsors")}
+            className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 ${
+              activeTab === "sponsors"
+                ? "border-brand-violet text-brand-violet font-black"
+                : "border-transparent hover:text-brand-ink"
+            }`}
+          >
+            <Award className="w-3.5 h-3.5" />
+            <span>SPONSORS</span>
           </button>
 
           <button
@@ -238,8 +270,16 @@ export default function AdminDashboard({
         )}
 
         {activeTab === "registrations" && (
-          <RegistrationsTable registrations={initialRegistrations} />
+          <RegistrationsTable
+            registrations={initialRegistrations}
+            byEvent={byEvent}
+            onDeleteRegistration={onDeleteRegistration}
+          />
         )}
+
+        {activeTab === "events" && <EventsManager />}
+
+        {activeTab === "sponsors" && <SponsorsManager />}
 
         {activeTab === "stalls" && <StallManager />}
 

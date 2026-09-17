@@ -2,11 +2,33 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Instagram, Linkedin } from "lucide-react";
 import CountdownWidget from "@/components/countdown-widget";
 import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function Footer() {
+  const SOCIAL_LINKS = [
+    {
+      name: "X (Twitter)",
+      href: "https://x.com/SCSETBennett",
+      icon: (
+        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+      )
+    },
+    {
+      name: "Instagram",
+      href: "https://www.instagram.com/bu.cabinet/",
+      icon: <Instagram className="w-3.5 h-3.5" />
+    },
+    {
+      name: "LinkedIn",
+      href: "https://www.linkedin.com/company/scset-student-cabinet-bennett-university/home/",
+      icon: <Linkedin className="w-3.5 h-3.5" />
+    }
+  ];
+
   return (
     <footer className="relative w-full bg-brand-violet text-white pt-16 pb-12 overflow-hidden border-t-4 border-brand-ink">
       <AnimatedGridPattern
@@ -25,10 +47,10 @@ export default function Footer() {
           <div className="lg:col-span-4 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-white overflow-hidden p-1 shadow-md flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/20 bg-white p-1">
                   <Image
                     src="/Cabinet Assets/cabinet-square-logo-white-bg.png"
-                    alt="Cabinet Valley Logo"
+                    alt="Student Cabinet Logo"
                     width={48}
                     height={48}
                     className="w-full h-full object-contain"
@@ -36,16 +58,13 @@ export default function Footer() {
                 </div>
                 <div>
                   <h3 className="font-display text-2xl font-black uppercase text-white leading-none">
-                    CABINET VALLEY
+                    STUDENT CABINET
                   </h3>
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-white/80">
-                    ANNUAL STUDENT FEST 2026
-                  </span>
                 </div>
               </div>
 
               <p className="text-xs text-white/80 font-medium max-w-sm mb-6">
-                Organized by the Student Cabinet. 3 days of high-intensity startup battles, real-time trading simulations, and 50+ dynamic retail & food stalls.
+                Organized by the Student Cabinet. 3 days of high-intensity startup battles, real-time trading simulations, and 50 dynamic startup & commercial stalls.
               </p>
             </div>
 
@@ -58,7 +77,7 @@ export default function Footer() {
                 6 TRACKS
               </span>
               <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#FF5A36] text-white">
-                ₹1L+ POOL
+                FOUNDER&apos;S OFFICE
               </span>
             </div>
           </div>
@@ -119,11 +138,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="#leaderboard" className="hover:text-brand-lime transition-colors">
-                  Leaderboard
-                </Link>
-              </li>
-              <li>
                 <Link href="#sponsors" className="hover:text-brand-lime transition-colors">
                   Sponsors
                 </Link>
@@ -158,20 +172,18 @@ export default function Footer() {
             </div>
 
             {/* Social Links */}
-            <div className="flex items-center gap-2 mt-6">
-              {[
-                { name: "X (Twitter)", letter: "X" },
-                { name: "Discord", letter: "D" },
-                { name: "Instagram", letter: "I" },
-                { name: "LinkedIn", letter: "L" },
-              ].map((item, idx) => (
-                <button
+            <div className="flex items-center gap-2.5 mt-6">
+              {SOCIAL_LINKS.map((item, idx) => (
+                <a
                   key={idx}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={item.name}
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white hover:text-brand-violet flex items-center justify-center text-xs font-bold transition-colors text-white"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white hover:text-brand-violet flex items-center justify-center transition-all text-white hover:scale-105"
                 >
-                  {item.letter}
-                </button>
+                  {item.icon}
+                </a>
               ))}
             </div>
           </div>
@@ -183,11 +195,11 @@ export default function Footer() {
           <div>
             © 2026 CABINET VALLEY. ALL RIGHTS RESERVED. ORGANIZED BY THE STUDENT CABINET.
           </div>
-          <div className="flex items-center gap-6 text-[11px] font-bold uppercase tracking-wider text-white/80">
+          {/* <div className="flex items-center gap-6 text-[11px] font-bold uppercase tracking-wider text-white/80">
             <span>TERMS & RULES</span>
             <span>CODE OF CONDUCT</span>
             <span>PRIVACY</span>
-          </div>
+          </div> */}
         </div>
 
       </div>

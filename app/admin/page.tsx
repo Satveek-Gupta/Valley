@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
+  const [byEvent, setByEvent] = useState<any>({});
 
   useEffect(() => {
     // 1. Check existing Supabase auth session
@@ -57,10 +58,26 @@ export default function AdminPage() {
       if (json.registrations) {
         setRegistrations(json.registrations);
       }
+      if (json.byEvent) {
+        setByEvent(json.byEvent);
+      }
     } catch (e) {
       console.error("Failed to fetch admin registrations", e);
     }
   };
+
+  const handleDeleteRegistration = (id: string, eventSlug: string) => {
+    setRegistrations((prev) => prev.filter((r) => r.id !== id));
+    setByEvent((prev: any) => {
+      const copy = { ...prev };
+      if (copy[eventSlug]) {
+        copy[eventSlug] = copy[eventSlug].filter((r: any) => r.id !== id);
+      }
+      return copy;
+    });
+  };
+
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,8 +218,11 @@ export default function AdminPage() {
   return (
     <AdminDashboard
       initialRegistrations={registrations}
+      byEvent={byEvent}
       userEmail={userEmail}
       onLogout={handleLogout}
+      onDeleteRegistration={handleDeleteRegistration}
     />
   );
 }
+

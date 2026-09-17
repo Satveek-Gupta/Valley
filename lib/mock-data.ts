@@ -57,20 +57,20 @@ export const EVENTS_DATA: EventItem[] = [
     name: "BAY AREA STALLS",
     day: 1,
     dateLabel: "DAY 01 & 02",
-    tagline: "50+ Premier High-Footfall Commercial & Food Stalls",
-    description: "The commercial heartbeat of Cabinet Valley. Student startups, brand pop-ups, merchandise booths, and culinary outlets across 2 high-energy days.",
+    tagline: "50 Premier High-Footfall Commercial & Startup Stalls",
+    description: "The commercial heartbeat of Cabinet Valley. Student startups, brand pop-ups, and merchandise booths across 2 high-energy days.",
     teamSize: "Individual / Startup Teams",
     format: "2-Day Expo Floor",
-    venue: "German Hangar & D5 Stage Ground",
+    venue: "German Hangar",
     timing: "10:00 AM – 6:00 PM",
     badgeColor: "#7C3AED",
     tagType: "violet",
     iconName: "Store",
     featured: true,
     rounds: [
-      { round: 1, title: "Main Stalls (50 Units)", desc: "German Hangar · ₹4,000 per stall · Dedicated power & spotlight booths." },
-      { round: 2, title: "Food Stalls", desc: "D5 Stage Ground · Continuous live festival dining till 6:00 PM." }
+      { round: 1, title: "Main Stalls (50 Units)", desc: "German Hangar · 50 curated stalls · Dedicated power & spotlight booths." }
     ],
+
     rewards: [
       "Guaranteed footfall of 2,000+ students & visitors",
       "Direct commerce, brand activation & merchant recognition"
@@ -197,9 +197,9 @@ export const TIMELINE_SCHEDULE = [
       },
       {
         time: "All Day till 6:00 PM",
-        name: "Food Street Live",
-        venue: "D5 Stage Ground",
-        type: "Food & Social",
+        name: "Commercial Showcase & Expo",
+        venue: "German Hangar",
+        type: "Networking",
         badgeColor: "#C6F135"
       }
     ]
@@ -270,7 +270,7 @@ export const STATS_METRICS = [
   { value: "3 DAYS", label: "TOTAL DURATION", highlight: false },
   { value: "6 EVENTS", label: "COMPETITIONS & EXPO", highlight: true },
   { value: "50+ STALLS", label: "BAY AREA FLOOR", highlight: false },
-  { value: "₹1,00,000+", label: "PRIZE POOL & GRANTS", highlight: false },
+  { value: "OFFICIAL", label: "CERTIFICATES & GOODIES", highlight: false },
   { value: "15,000+", label: "ATTENDEES EXPECTED", highlight: false }
 ];
 
@@ -299,23 +299,9 @@ export const SPONSORS_LIST = [
 export const PRIZE_HIGHLIGHTS = [
   {
     title: "Founder's Office Internships",
-    category: "Startup Roulette & War Room",
-    highlight: "3-Month Direct Placement",
-    description: "Best individual pitchers win a paid 3-month tenure working directly under tier-1 founders.",
+    category: "Exclusive Opportunity",
+    highlight: "Direct Placement & Mentorship",
+    description: "Top-performing pitchers and winners secure direct tenure working inside the Founder's Office of tier-1 startups and venture-backed companies.",
     badgeColor: "#FF5A36"
-  },
-  {
-    title: "Physical Trophies & Grants",
-    category: "All Competitive Tracks",
-    highlight: "₹1,00,000+ Total Value",
-    description: "Custom engraved trophies, winner cash grants, and curated founder goodie crates.",
-    badgeColor: "#7C3AED"
-  },
-  {
-    title: "Venture Incubation Access",
-    category: "Entre-Prenormie & Boardroom",
-    highlight: "Seed Mentorship Pipeline",
-    description: "Direct fast-tracked evaluation with angel syndicates and incubator demo days.",
-    badgeColor: "#2F6FED"
   }
 ];

@@ -14,10 +14,22 @@ import {
 } from "@/components/ui/carousel";
 
 export default function EventsCarousel() {
+  const [events, setEvents] = useState<EventItem[]>(EVENTS_DATA);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
   const [selectedEventModal, setSelectedEventModal] = useState<EventItem | null>(null);
+
+  useEffect(() => {
+    fetch("/api/events")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.events && Array.isArray(data.events) && data.events.length > 0) {
+          setEvents(data.events);
+        }
+      })
+      .catch((err) => console.error("Could not fetch dynamic events", err));
+  }, []);
 
   useEffect(() => {
     if (!api) {
@@ -30,7 +42,7 @@ export default function EventsCarousel() {
     api.on("select", () => {
       setCurrent(api.selectedScrollSnap() + 1);
     });
-  }, [api]);
+  }, [api, events]);
 
   return (
     <section id="events" className="relative w-full py-16 sm:py-24 bg-[#FAFAFA] border-b border-brand-ink/10 overflow-hidden">
@@ -79,12 +91,12 @@ export default function EventsCarousel() {
             className="w-full"
           >
             <CarouselContent className="-ml-3 sm:-ml-4">
-              {EVENTS_DATA.map((event, index) => {
+              {events.map((event, index) => {
                 const isSelected = current === index + 1;
 
                 return (
                   <CarouselItem
-                    key={event.id}
+                    key={event.id || event.slug}
                     className="pl-3 sm:pl-4 basis-[88%] sm:basis-[48%] lg:basis-[33.333%]"
                   >
                     <div
@@ -164,7 +176,7 @@ export default function EventsCarousel() {
               </button>
               
               <div className="font-mono text-sm font-black tracking-wider text-brand-ink min-w-[70px] text-center">
-                {String(current || 1).padStart(2, "0")} / {String(count || EVENTS_DATA.length).padStart(2, "0")}
+                {String(current || 1).padStart(2, "0")} / {String(count || events.length).padStart(2, "0")}
               </div>
 
               <button
@@ -245,7 +257,20 @@ export default function EventsCarousel() {
               </div>
             </div>
 
-            {/* Rewards & Internships */}
+            {/* Offline Booking Notice for Bay Area Stalls */}
+            {selectedEventModal.slug === "bay-area" && (
+              <div className="mb-6 p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900">
+                <div className="text-xs font-black uppercase tracking-wider text-amber-950 mb-1">
+                  OFFLINE ON-CAMPUS REGISTRATION ONLY
+                </div>
+                <p className="text-xs font-semibold leading-relaxed">
+                  Stalls in the German Hangar (50 curated units) are allocated <strong>exclusively offline</strong> through the Student Cabinet Coordination Desk. Online registration is not applicable for stall allotments.
+                </p>
+              </div>
+            )}
+
+
+            {/* Rewards & Incentives */}
             <div className="mb-6 p-4 rounded-2xl bg-brand-violet/10 border-2 border-brand-violet/30">
               <div className="flex items-center gap-2 text-xs font-black uppercase text-brand-violet mb-2">
                 <Award className="w-4 h-4" />
@@ -269,14 +294,21 @@ export default function EventsCarousel() {
               >
                 CLOSE
               </button>
-              <Link
-                href={`/register?event=${selectedEventModal.slug}`}
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-brand-violet hover:bg-brand-violet-dark text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-brand-violet/30 transition-all"
-              >
-                <span>REGISTER FOR THIS TRACK</span>
-                <ArrowUpRight className="w-4 h-4" />
-              </Link>
+              {selectedEventModal.slug === "bay-area" ? (
+                <div className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-zinc-900 text-brand-lime text-xs font-black uppercase tracking-wider shadow-md">
+                  <span>OFFLINE BOOKING ONLY</span>
+                </div>
+              ) : (
+                <Link
+                  href={`/register?event=${selectedEventModal.slug}`}
+                  className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-brand-violet hover:bg-brand-violet-dark text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-brand-violet/30 transition-all"
+                >
+                  <span>REGISTER FOR THIS TRACK</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
+
 
           </div>
         </div>

@@ -13,21 +13,16 @@ export default function Navbar() {
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden border border-brand-ink/10 flex items-center justify-center bg-white shadow-sm transition-transform group-hover:scale-105">
             <Image
               src="/Cabinet Assets/cabinet-square-logo-white-bg.png"
-              alt="Cabinet Valley Logo"
+              alt="Student Cabinet Logo"
               width={40}
               height={40}
               className="w-full h-full object-contain p-0.5"
               priority
             />
           </div>
-          <div className="flex flex-col">
-            <span className="font-display text-lg sm:text-xl font-bold tracking-wide text-brand-ink leading-none">
-              CABINET VALLEY
-            </span>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-brand-violet leading-tight">
-              STUDENT FEST 2026
-            </span>
-          </div>
+          <span className="font-display text-lg sm:text-xl font-bold tracking-wide text-brand-ink">
+            STUDENT CABINET
+          </span>
         </Link>
 
         {/* Center: Nav links */}
@@ -41,9 +36,9 @@ export default function Navbar() {
           <Link href="#timeline" className="hover:text-brand-violet transition-colors">
             TIMELINE
           </Link>
-          <Link href="#leaderboard" className="hover:text-brand-violet transition-colors">
+          {/* <Link href="/leaderboard" className="hover:text-brand-violet transition-colors">
             LEADERBOARD
-          </Link>
+          </Link> */}
           <Link href="#sponsors" className="hover:text-brand-violet transition-colors">
             SPONSORS
           </Link>

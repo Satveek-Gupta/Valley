@@ -6,7 +6,6 @@ export const EventSlugEnum = z.enum([
   "the-boardroom",
   "entre-prenormie",
   "bulls-and-bears",
-  "bay-area",
 ]);
 
 export type EventSlug = z.infer<typeof EventSlugEnum>;
@@ -20,10 +19,10 @@ export const registrationSchema = z.object({
     .min(10, "Phone number must be at least 10 digits")
     .regex(/^[0-9+\s-]{10,15}$/, "Please enter a valid phone number"),
 
-  // 2. Event Selection (multi-select)
+  // 2. Event Selection (single event selection for dedicated flow)
   selectedEvents: z
     .array(EventSlugEnum)
-    .min(1, "Please select at least one event to register for"),
+    .min(1, "Please select an event to register for"),
 
   // 3. Event-specific conditional fields
   // Startup Roulette
@@ -59,16 +58,6 @@ export const registrationSchema = z.object({
   entrePrenormie: z
     .object({
       founderDiscussionTopic: z.string().optional(),
-    })
-    .optional(),
-
-  // Bay Area (Stalls)
-  bayArea: z
-    .object({
-      stallName: z.string().optional(),
-      contactPerson: z.string().optional(),
-      phoneNumber: z.string().optional(),
-      stallType: z.enum(["main", "food"]).optional(),
     })
     .optional(),
 
@@ -137,7 +126,7 @@ export const registrationSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["theWarRoom", "teamMembersNames"],
-        message: "Please list team members (up to 5)",
+        message: "Please list team members (5-member roster)",
       });
     }
   }
@@ -165,37 +154,7 @@ export const registrationSchema = z.object({
       });
     }
   }
-
-  if (data.selectedEvents.includes("bay-area")) {
-    if (!data.bayArea?.stallName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["bayArea", "stallName"],
-        message: "Stall or Business name is required",
-      });
-    }
-    if (!data.bayArea?.contactPerson?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["bayArea", "contactPerson"],
-        message: "Contact person name is required",
-      });
-    }
-    if (!data.bayArea?.phoneNumber?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["bayArea", "phoneNumber"],
-        message: "Stall contact phone number is required",
-      });
-    }
-    if (!data.bayArea?.stallType) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["bayArea", "stallType"],
-        message: "Please select stall type (Main or Food)",
-      });
-    }
-  }
 });
 
 export type RegistrationFormData = z.infer<typeof registrationSchema>;
+

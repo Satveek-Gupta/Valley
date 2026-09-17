@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Users, Sparkles, Store } from "lucide-react";
+import { ArrowUpRight, Users, Sparkles } from "lucide-react";
 import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function CommunityCTA() {
@@ -30,26 +30,18 @@ export default function CommunityCTA() {
         </h2>
 
         <p className="text-sm sm:text-base font-semibold text-zinc-600 max-w-xl mx-auto uppercase tracking-wide mb-10">
-          Whether pitching your first startup, bidding in the war room, or setting up a flagship food stall in Bay Area — your stage is ready.
+          Whether pitching your first startup, bidding in the war room, or competing on the trading floor — your stage is ready.
         </p>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex items-center justify-center">
           <Link
             href="/register"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-brand-ink hover:bg-brand-violet text-white font-black text-sm uppercase tracking-wider shadow-xl transition-all transform hover:scale-105 active:scale-95"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-4 rounded-full bg-brand-ink hover:bg-brand-violet text-white font-black text-sm uppercase tracking-wider shadow-xl transition-all transform hover:scale-105 active:scale-95"
           >
             <Sparkles className="w-4 h-4 text-brand-lime" />
             <span>REGISTER FOR EVENTS</span>
             <ArrowUpRight className="w-4 h-4" />
-          </Link>
-
-          <Link
-            href="/register?event=bay-area"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-brand-surface hover:bg-zinc-200 border-2 border-brand-ink text-brand-ink font-black text-sm uppercase tracking-wider transition-all"
-          >
-            <Store className="w-4 h-4 text-brand-violet" />
-            <span>BOOK BAY AREA STALL</span>
           </Link>
         </div>
 

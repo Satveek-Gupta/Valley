@@ -85,25 +85,6 @@ export default function Hero() {
                 <CountdownWidget />
               </div>
             </div>
-
-            {/* Social Channels Row */}
-            <div className="flex items-center justify-end gap-3 mt-4 pt-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mr-1">FOLLOW CV</span>
-              {[
-                { name: "X (Twitter)", letter: "X" },
-                { name: "Discord", letter: "D" },
-                { name: "Instagram", letter: "I" },
-                { name: "LinkedIn", letter: "L" },
-              ].map((soc, i) => (
-                <button
-                  key={i}
-                  aria-label={soc.name}
-                  className="w-8 h-8 rounded-full bg-brand-surface border border-brand-border text-brand-ink text-xs font-black flex items-center justify-center hover:bg-brand-ink hover:text-white transition-colors"
-                >
-                  {soc.letter}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 

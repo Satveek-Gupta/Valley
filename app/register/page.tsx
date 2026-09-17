@@ -78,7 +78,7 @@ export default function RegisterPage() {
             JOIN CABINET VALLEY
           </h1>
           <p className="mt-2 text-xs sm:text-sm font-semibold text-zinc-500 uppercase tracking-wider max-w-lg mx-auto">
-            Choose one or more tracks: Startup Roulette, The War Room, The Boardroom, Entre-Prenormie, Bulls & Bears, or Bay Area Stalls.
+            Choose your competition track to claim your festival seat, pitch slot, or commercial stall.
           </p>
         </div>
 

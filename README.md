@@ -55,7 +55,7 @@ Cabinet Valley departs from generic corporate layouts and glossy glassmorphic tr
   - **The War Room:** 5-member team roster, team name, and leader details.
   - **The Boardroom:** Duo partner details and executive case presentation profile.
   - **Entre-Prenormie:** Custom founder dialogue prompt / discussion topic.
-  - **Bay Area:** Business name, contact person, phone number, and stall category (*Main German Hangar vs. Food Stall*).
+  - **Bay Area:** Business name, contact person, and phone number for German Hangar commercial stall booking.
   - **Bulls & Bears:** Individual trading seat confirmation.
 - **Celebration Feedback:** Full particle confetti burst on successful submission and downloadable confirmation summary.
 
@@ -63,7 +63,7 @@ Cabinet Valley departs from generic corporate layouts and glossy glassmorphic tr
 - **Authentication:** Backed by Supabase Auth with an automated fallback dev mode for local testing.
 - **Analytics Dashboard:** Live metrics on total registrations, per-event breakdown, stall occupancy rate, and estimated stall revenue.
 - **Submissions Management:** Searchable, event-filterable participant table with details inspection modal and one-click CSV export.
-- **Bay Area Stall Manager:** Visual floorplan grid managing 40 Main Stalls (German Hangar @ ₹4,000) and 10 Food Stalls (D5 Stage Ground), supporting status updates (*Available*, *Pending*, *Allocated*, *Paid*).
+- **Bay Area Stall Manager:** Visual floorplan grid managing 50 Main Stalls (German Hangar @ ₹4,000), supporting status updates (*Available*, *Pending*, *Allocated*, *Paid*).
 - **System Settings:** Control countdown datetime targets and site status flags.
 
 ---
@@ -73,7 +73,7 @@ Cabinet Valley departs from generic corporate layouts and glossy glassmorphic tr
 | Day | Event | Format & Size | Highlights & Rewards |
 |---|---|---|---|
 | **Day 1** | **Startup Roulette** | 5 members (12 teams max) | 3-round pivot challenge: *Home Pitch*, *Steal the Startup*, *Sell the Scam*. Top 3 win certificates + 3-month Founder's Office Internship. |
-| **Day 1 & 2** | **Bay Area Stalls** | Individual / Startup Teams | 40 Main Stalls (German Hangar) + 10 Food Stalls (D5 Ground). Marketplace & product showcase. |
+| **Day 1 & 2** | **Bay Area Stalls** | Individual / Startup Teams | 50 Main Stalls (German Hangar @ ₹4,000). Marketplace & startup showcase. |
 | **Day 2** | **The War Room** | 5 members | High-stakes blind asset bidding & rapid crisis pitching under judge scrutiny. |
 | **Day 2** | **The Boardroom** | 2 members (Duos) | Corporate dilemma case study resolution and turnaround roadmap presentation. |
 | **Day 3** | **Entre-Prenormie** | Individual (1-on-1) | Exclusive 1-on-1 mentorship deep dives with verified startup founders. |
