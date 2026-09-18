@@ -195,11 +195,18 @@ export default function Footer() {
           <div>
             © 2026 CABINET VALLEY. ALL RIGHTS RESERVED. ORGANIZED BY THE STUDENT CABINET.
           </div>
-          {/* <div className="flex items-center gap-6 text-[11px] font-bold uppercase tracking-wider text-white/80">
-            <span>TERMS & RULES</span>
-            <span>CODE OF CONDUCT</span>
-            <span>PRIVACY</span>
-          </div> */}
+          <div className="text-white/80 font-medium">
+            Built with ❤️ by{" "}
+            <a
+              href="https://www.linkedin.com/in/satveek-gupta/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-lime font-bold hover:underline transition-colors"
+            >
+              Satveek Gupta
+            </a>
+            , Deputy Minister of Digital Infrastructure
+          </div>
         </div>
 
       </div>
