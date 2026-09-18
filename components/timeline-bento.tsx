@@ -47,7 +47,7 @@ export default function TimelineBento() {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <span className="px-3 py-1 rounded-full bg-white/20 text-brand-lime text-xs font-black uppercase tracking-wider">
-                  FEATURED EXPO & PITCH
+                  Bay Area: The Student Marketplace
                 </span>
                 <span className="font-mono text-xs font-bold text-white/80">SEPTEMBER 24, 2026</span>
               </div>
@@ -57,7 +57,7 @@ export default function TimelineBento() {
               </h3>
 
               <p className="text-xs sm:text-sm text-white/90 font-medium max-w-lg mb-6">
-                50 commercial & startup stalls across German Hangar, followed by the high-velocity 3-round Startup Roulette pitch competition.
+                Turn your ideas into business! Set up your own stall at Cabinet Valley 1.0 and sell anything from products to creative services.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
@@ -66,7 +66,7 @@ export default function TimelineBento() {
                     BAY AREA (GERMAN HANGAR)
                   </div>
                   <div className="text-xs font-bold text-white mt-0.5">10:00 AM – 6:00 PM</div>
-                  <div className="text-[11px] text-white/70">50 Stalls · Offline Desk Booking</div>
+                  {/* <div className="text-[11px] text-white/70">50 Stalls · Offline Desk Booking</div> */}
                 </div>
 
 
@@ -74,8 +74,8 @@ export default function TimelineBento() {
                   <div className="text-[10px] font-black uppercase tracking-wider text-[#FF5A36]">
                     STARTUP ROULETTE (3 RDS)
                   </div>
-                  <div className="text-xs font-bold text-white mt-0.5">11:00 AM – 4:00 PM</div>
-                  <div className="text-[11px] text-white/70">Main Auditorium · 12 Teams</div>
+                  <div className="text-xs font-bold text-white mt-0.5">6:30 PM Onwards</div>
+                  {/* <div className="text-[11px] text-white/70">Main Auditorium · 12 Teams</div> */}
                 </div>
               </div>
             </div>
@@ -118,10 +118,10 @@ export default function TimelineBento() {
                   <Clock className="w-3.5 h-3.5 text-brand-violet" />
                   <span>11:00 AM – 3:30 PM</span>
                 </div>
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <MapPin className="w-3.5 h-3.5 text-brand-violet" />
                   <span>Strategy Arena - Hall B</span>
-                </div>
+                </div> */}
               </div>
             </div>
 

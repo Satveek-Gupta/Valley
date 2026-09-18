@@ -268,7 +268,7 @@ export const TIMELINE_SCHEDULE = [
 
 export const STATS_METRICS = [
   { value: "3 DAYS", label: "TOTAL DURATION", highlight: false },
-  { value: "6 EVENTS", label: "COMPETITIONS & EXPO", highlight: true },
+  { value: "7 EVENTS", label: "COMPETITIONS & EXPO", highlight: true },
   { value: "50+ STALLS", label: "BAY AREA FLOOR", highlight: false },
   { value: "OFFICIAL", label: "CERTIFICATES & GOODIES", highlight: false },
   { value: "15,000+", label: "ATTENDEES EXPECTED", highlight: false }
