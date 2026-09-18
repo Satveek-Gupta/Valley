@@ -457,7 +457,7 @@ export default function RegistrationForm() {
             </div>
             <div>
               <h3 className="font-display text-2xl font-black uppercase text-brand-ink leading-tight">
-                PRIMARY PARTICIPANT DETAILS
+                LEADER DETAILS
               </h3>
               <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                 Point of contact for event credentials and access passes
