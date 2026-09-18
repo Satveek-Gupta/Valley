@@ -53,6 +53,9 @@ export default function RegistrationForm() {
   const [submissionResult, setSubmissionResult] = useState<any | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [warRoomMembers, setWarRoomMembers] = useState(["", "", "", ""]);
+  const [rouletteMembers, setRouletteMembers] = useState(["", "", "", ""]);
+
   useEffect(() => {
     fetch("/api/events")
       .then((res) => res.json())
@@ -101,24 +104,37 @@ export default function RegistrationForm() {
     },
   });
 
-  // Sync state if URL changes
+  // Sync state if URL changes (e.g. browser back/forward or direct navigation)
   useEffect(() => {
-    if (urlEvent && onlineEvents.some((e) => e.slug === urlEvent)) {
+    if (urlEvent && ONLINE_EVENTS.some((e) => e.slug === urlEvent)) {
       setSelectedEvent(urlEvent);
       setValue("selectedEvents", [urlEvent], { shouldValidate: true });
+    } else if (!urlEvent) {
+      setSelectedEvent(null);
+      setValue("selectedEvents", [], { shouldValidate: false });
     }
-  }, [urlEvent, setValue, onlineEvents]);
+  }, [urlEvent, setValue]);
 
   const handleSelectEvent = (slug: EventSlug) => {
     setSelectedEvent(slug);
     setValue("selectedEvents", [slug], { shouldValidate: true });
-    router.push(`/register?event=${slug}`, { scroll: false });
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", `/register?event=${slug}`);
+    }
+    router.replace(`/register?event=${slug}`, { scroll: false });
   };
 
-  const handleBackToEventSelection = () => {
+  const handleBackToEventSelection = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setSelectedEvent(null);
     setValue("selectedEvents", [], { shouldValidate: false });
-    router.push("/register", { scroll: false });
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", "/register");
+    }
+    router.replace("/register", { scroll: false });
   };
 
 
@@ -232,9 +248,8 @@ export default function RegistrationForm() {
           <button
             onClick={() => {
               setSubmissionResult(null);
-              setSelectedEvent(null);
               reset();
-              router.push("/register", { scroll: false });
+              handleBackToEventSelection();
             }}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border-2 border-brand-ink text-brand-ink font-black text-xs uppercase tracking-wider hover:bg-zinc-100 transition-colors"
           >
@@ -558,16 +573,89 @@ export default function RegistrationForm() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                  TEAM MEMBERS' NAMES <span className="text-red-500">*</span> (UP TO 5 MEMBERS)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Alice, Bob, Charlie, David"
-                  {...register("startupRoulette.teamMembersNames")}
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                />
+              {/* Additional Team Members */}
+              <div className="space-y-2 pt-2 border-t border-zinc-200">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black uppercase tracking-wider text-brand-ink">
+                    TEAM MEMBERS&apos; NAMES <span className="text-red-500">*</span> (4 ADDITIONAL MEMBERS)
+                  </label>
+                  <span className="text-[11px] font-mono text-zinc-400 font-bold">5-MEMBER ROSTER</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
+                      Member 2 Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={rouletteMembers[0]}
+                      onChange={(e) => {
+                        const updated = [...rouletteMembers];
+                        updated[0] = e.target.value;
+                        setRouletteMembers(updated);
+                        setValue("startupRoulette.teamMembersNames", updated.join(", "), { shouldValidate: true });
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
+                      Member 3 Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={rouletteMembers[1]}
+                      onChange={(e) => {
+                        const updated = [...rouletteMembers];
+                        updated[1] = e.target.value;
+                        setRouletteMembers(updated);
+                        setValue("startupRoulette.teamMembersNames", updated.join(", "), { shouldValidate: true });
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
+                      Member 4 Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={rouletteMembers[2]}
+                      onChange={(e) => {
+                        const updated = [...rouletteMembers];
+                        updated[2] = e.target.value;
+                        setRouletteMembers(updated);
+                        setValue("startupRoulette.teamMembersNames", updated.join(", "), { shouldValidate: true });
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
+                      Member 5 Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={rouletteMembers[3]}
+                      onChange={(e) => {
+                        const updated = [...rouletteMembers];
+                        updated[3] = e.target.value;
+                        setRouletteMembers(updated);
+                        setValue("startupRoulette.teamMembersNames", updated.join(", "), { shouldValidate: true });
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                    />
+                  </div>
+                </div>
+
                 {errors.startupRoulette?.teamMembersNames && (
                   <p className="mt-1 text-xs text-red-600 font-bold">{errors.startupRoulette.teamMembersNames.message}</p>
                 )}
@@ -609,7 +697,7 @@ export default function RegistrationForm() {
 
           {/* 2. THE WAR ROOM FIELDS */}
           {selectedEvent === "the-war-room" && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black uppercase text-brand-ink mb-1">
@@ -642,16 +730,89 @@ export default function RegistrationForm() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                  TEAM MEMBERS' NAMES <span className="text-red-500">*</span> (5-MEMBER ROSTER)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Member 1, Member 2, Member 3, Member 4"
-                  {...register("theWarRoom.teamMembersNames")}
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                />
+              {/* 4 Team Member Individual Fields */}
+              <div className="space-y-2 pt-2 border-t border-zinc-200">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black uppercase tracking-wider text-brand-ink">
+                    TEAM MEMBERS&apos; NAMES <span className="text-red-500">*</span> (4 ADDITIONAL MEMBERS)
+                  </label>
+                  <span className="text-[11px] font-mono text-zinc-400 font-bold">5-MEMBER ROSTER</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
+                      Member 2 Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={warRoomMembers[0]}
+                      onChange={(e) => {
+                        const updated = [...warRoomMembers];
+                        updated[0] = e.target.value;
+                        setWarRoomMembers(updated);
+                        setValue("theWarRoom.teamMembersNames", updated.join(", "), { shouldValidate: true });
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
+                      Member 3 Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={warRoomMembers[1]}
+                      onChange={(e) => {
+                        const updated = [...warRoomMembers];
+                        updated[1] = e.target.value;
+                        setWarRoomMembers(updated);
+                        setValue("theWarRoom.teamMembersNames", updated.join(", "), { shouldValidate: true });
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
+                      Member 4 Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={warRoomMembers[2]}
+                      onChange={(e) => {
+                        const updated = [...warRoomMembers];
+                        updated[2] = e.target.value;
+                        setWarRoomMembers(updated);
+                        setValue("theWarRoom.teamMembersNames", updated.join(", "), { shouldValidate: true });
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
+                      Member 5 Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={warRoomMembers[3]}
+                      onChange={(e) => {
+                        const updated = [...warRoomMembers];
+                        updated[3] = e.target.value;
+                        setWarRoomMembers(updated);
+                        setValue("theWarRoom.teamMembersNames", updated.join(", "), { shouldValidate: true });
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                    />
+                  </div>
+                </div>
+
                 {errors.theWarRoom?.teamMembersNames && (
                   <p className="mt-1 text-xs text-red-600 font-bold">{errors.theWarRoom.teamMembersNames.message}</p>
                 )}
