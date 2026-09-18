@@ -543,7 +543,7 @@ export default function RegistrationForm() {
             <div className="space-y-5">
               <div>
                 <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                  STARTUP / TEAM NAME <span className="text-red-500">*</span>
+                  TEAM NAME <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -651,7 +651,7 @@ export default function RegistrationForm() {
             <div className="space-y-5">
               <div>
                 <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                  WAR ROOM SYNDICATE / TEAM NAME <span className="text-red-500">*</span>
+                  TEAM NAME <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -759,7 +759,7 @@ export default function RegistrationForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                  DUO / TEAM NAME <span className="text-red-500">*</span>
+                  TEAM NAME <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"

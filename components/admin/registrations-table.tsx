@@ -134,7 +134,7 @@ export default function RegistrationsTable({
         "Team Name",
         "Team Leader",
         "Roster Members",
-        "Startup / Idea Name",
+        "Idea Name",
         "Pitch Description",
         "Registered At",
         "Status",
@@ -411,7 +411,7 @@ export default function RegistrationsTable({
                 {activeEventTab === "startup-roulette" && (
                   <>
                     <th className="py-3.5 px-4">Team & Leader</th>
-                    <th className="py-3.5 px-4">Startup / Idea</th>
+                    <th className="py-3.5 px-4">Idea</th>
                   </>
                 )}
 
