@@ -39,9 +39,6 @@ export default function Navbar() {
           {/* <Link href="/leaderboard" className="hover:text-brand-violet transition-colors">
             LEADERBOARD
           </Link> */}
-          <Link href="#sponsors" className="hover:text-brand-violet transition-colors">
-            SPONSORS
-          </Link>
         </nav>
 
         {/* Right: Date Badge & CTA */}

@@ -77,13 +77,6 @@ export const registrationSchema = z.object({
         message: "Team name is required for Startup Roulette",
       });
     }
-    if (!data.startupRoulette?.teamLeaderName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["startupRoulette", "teamLeaderName"],
-        message: "Team leader name is required",
-      });
-    }
     const rouletteMembers =
       data.startupRoulette?.teamMembersNames
         ?.split(",")
@@ -106,13 +99,6 @@ export const registrationSchema = z.object({
         message: "Team name is required for The War Room",
       });
     }
-    if (!data.theWarRoom?.teamLeaderName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["theWarRoom", "teamLeaderName"],
-        message: "Team leader name is required",
-      });
-    }
     const warRoomMembers =
       data.theWarRoom?.teamMembersNames
         ?.split(",")
@@ -133,13 +119,6 @@ export const registrationSchema = z.object({
         code: z.ZodIssueCode.custom,
         path: ["theBoardroom", "teamName"],
         message: "Team name is required for The Boardroom",
-      });
-    }
-    if (!data.theBoardroom?.teamLeaderName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["theBoardroom", "teamLeaderName"],
-        message: "Team leader name is required",
       });
     }
     if (!data.theBoardroom?.teamMembersNames?.trim()) {

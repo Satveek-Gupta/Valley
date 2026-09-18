@@ -541,36 +541,19 @@ export default function RegistrationForm() {
           {/* 1. STARTUP ROULETTE FIELDS */}
           {selectedEvent === "startup-roulette" && (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                    TEAM NAME <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. ByteBrigade"
-                    {...register("startupRoulette.teamName")}
-                    className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                  />
-                  {errors.startupRoulette?.teamName && (
-                    <p className="mt-1 text-xs text-red-600 font-bold">{errors.startupRoulette.teamName.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                    TEAM LEADER NAME <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Lead Pitcher"
-                    {...register("startupRoulette.teamLeaderName")}
-                    className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                  />
-                  {errors.startupRoulette?.teamLeaderName && (
-                    <p className="mt-1 text-xs text-red-600 font-bold">{errors.startupRoulette.teamLeaderName.message}</p>
-                  )}
-                </div>
+              <div>
+                <label className="block text-xs font-black uppercase text-brand-ink mb-1">
+                  STARTUP / TEAM NAME <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. ByteBrigade"
+                  {...register("startupRoulette.teamName")}
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                />
+                {errors.startupRoulette?.teamName && (
+                  <p className="mt-1 text-xs text-red-600 font-bold">{errors.startupRoulette.teamName.message}</p>
+                )}
               </div>
 
               {/* Additional Team Members */}
@@ -666,36 +649,19 @@ export default function RegistrationForm() {
           {/* 2. THE WAR ROOM FIELDS */}
           {selectedEvent === "the-war-room" && (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                    WAR ROOM SYNDICATE / TEAM NAME <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Apex Bidders"
-                    {...register("theWarRoom.teamName")}
-                    className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                  />
-                  {errors.theWarRoom?.teamName && (
-                    <p className="mt-1 text-xs text-red-600 font-bold">{errors.theWarRoom.teamName.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                    CHIEF NEGOTIATOR (TEAM LEADER) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Captain Name"
-                    {...register("theWarRoom.teamLeaderName")}
-                    className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                  />
-                  {errors.theWarRoom?.teamLeaderName && (
-                    <p className="mt-1 text-xs text-red-600 font-bold">{errors.theWarRoom.teamLeaderName.message}</p>
-                  )}
-                </div>
+              <div>
+                <label className="block text-xs font-black uppercase text-brand-ink mb-1">
+                  WAR ROOM SYNDICATE / TEAM NAME <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Apex Bidders"
+                  {...register("theWarRoom.teamName")}
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
+                />
+                {errors.theWarRoom?.teamName && (
+                  <p className="mt-1 text-xs text-red-600 font-bold">{errors.theWarRoom.teamName.message}</p>
+                )}
               </div>
 
               {/* 4 Team Member Individual Fields */}
@@ -790,7 +756,7 @@ export default function RegistrationForm() {
 
           {/* 3. THE BOARDROOM FIELDS */}
           {selectedEvent === "the-boardroom" && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-black uppercase text-brand-ink mb-1">
                   DUO / TEAM NAME <span className="text-red-500">*</span>
@@ -803,21 +769,6 @@ export default function RegistrationForm() {
                 />
                 {errors.theBoardroom?.teamName && (
                   <p className="mt-1 text-xs text-red-600 font-bold">{errors.theBoardroom.teamName.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                  PRIMARY LEAD <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Partner A"
-                  {...register("theBoardroom.teamLeaderName")}
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                />
-                {errors.theBoardroom?.teamLeaderName && (
-                  <p className="mt-1 text-xs text-red-600 font-bold">{errors.theBoardroom.teamLeaderName.message}</p>
                 )}
               </div>
 

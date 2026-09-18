@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
             email: validatedData.email,
             phone: validatedData.phone,
             team_name: validatedData.startupRoulette?.teamName || "",
-            team_leader_name: validatedData.startupRoulette?.teamLeaderName || "",
+            team_leader_name: validatedData.startupRoulette?.teamLeaderName || validatedData.fullName || "",
             team_members_names: validatedData.startupRoulette?.teamMembersNames || "",
             idea_name: validatedData.startupRoulette?.ideaName || "",
             idea_description: validatedData.startupRoulette?.ideaDescription || "",
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
             email: validatedData.email,
             phone: validatedData.phone,
             team_name: validatedData.theWarRoom?.teamName || "",
-            team_leader_name: validatedData.theWarRoom?.teamLeaderName || "",
+            team_leader_name: validatedData.theWarRoom?.teamLeaderName || validatedData.fullName || "",
             team_members_names: validatedData.theWarRoom?.teamMembersNames || "",
             status: "confirmed",
           })
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
             email: validatedData.email,
             phone: validatedData.phone,
             team_name: validatedData.theBoardroom?.teamName || "",
-            team_leader_name: validatedData.theBoardroom?.teamLeaderName || "",
+            team_leader_name: validatedData.theBoardroom?.teamLeaderName || validatedData.fullName || "",
             partner_name: validatedData.theBoardroom?.teamMembersNames || "",
             status: "confirmed",
           })
