@@ -386,12 +386,8 @@ export default function RegistrationForm() {
           className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-brand-ink hover:text-brand-violet transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span>← CHOOSE A DIFFERENT EVENT</span>
+          <span>CHOOSE A DIFFERENT EVENT</span>
         </button>
-
-        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-500">
-          EVENT 1 OF 1 SELECTED
-        </span>
       </div>
 
       {/* Selected Event Spotlight Banner */}
@@ -462,7 +458,7 @@ export default function RegistrationForm() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. Satveek Gupta"
+                placeholder="Full Name"
                 {...register("fullName")}
                 className={`w-full px-4 py-3 rounded-xl border-2 font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-brand-violet ${
                   errors.fullName ? "border-red-500 bg-red-50" : "border-zinc-300 focus:border-brand-ink"
@@ -480,7 +476,7 @@ export default function RegistrationForm() {
               </label>
               <input
                 type="email"
-                placeholder="e.g. participant@cabinet.edu"
+                placeholder="e.g. enrollment@bennett.edu.in"
                 {...register("email")}
                 className={`w-full px-4 py-3 rounded-xl border-2 font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-brand-violet ${
                   errors.email ? "border-red-500 bg-red-50" : "border-zinc-300 focus:border-brand-ink"
@@ -498,7 +494,7 @@ export default function RegistrationForm() {
               </label>
               <input
                 type="tel"
-                placeholder="e.g. 9876543210"
+                placeholder="Phone number"
                 {...register("phone")}
                 className={`w-full px-4 py-3 rounded-xl border-2 font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-brand-violet ${
                   errors.phone ? "border-red-500 bg-red-50" : "border-zinc-300 focus:border-brand-ink"
