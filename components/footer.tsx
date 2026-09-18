@@ -110,7 +110,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="#events" className="hover:text-brand-lime transition-colors">
-                  Entre-Prenormie
+                  Entrepre-Normie
                 </Link>
               </li>
               <li>

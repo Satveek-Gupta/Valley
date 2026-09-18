@@ -96,20 +96,6 @@ export const registrationSchema = z.object({
         message: "Startup Roulette requires exactly 5 participants (1 Leader + 4 Team Members)",
       });
     }
-    if (!data.startupRoulette?.ideaName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["startupRoulette", "ideaName"],
-        message: "Idea name is required",
-      });
-    }
-    if (!data.startupRoulette?.ideaDescription?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["startupRoulette", "ideaDescription"],
-        message: "Please provide a brief idea description",
-      });
-    }
   }
 
   if (data.selectedEvents.includes("the-war-room")) {

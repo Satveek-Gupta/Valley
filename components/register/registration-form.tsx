@@ -660,38 +660,6 @@ export default function RegistrationForm() {
                   <p className="mt-1 text-xs text-red-600 font-bold">{errors.startupRoulette.teamMembersNames.message}</p>
                 )}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div>
-                  <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                    STARTUP / IDEA NAME <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. NeuroSync AI"
-                    {...register("startupRoulette.ideaName")}
-                    className="w-full px-4 py-2.5 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                  />
-                  {errors.startupRoulette?.ideaName && (
-                    <p className="mt-1 text-xs text-red-600 font-bold">{errors.startupRoulette.ideaName.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black uppercase text-brand-ink mb-1">
-                    ELEVATOR PITCH / IDEA DESCRIPTION <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Brief 2-sentence summary of the problem and your solution..."
-                    {...register("startupRoulette.ideaDescription")}
-                    className="w-full px-4 py-2 rounded-xl border-2 border-zinc-300 bg-white text-sm font-medium focus:border-brand-violet focus:outline-none"
-                  />
-                  {errors.startupRoulette?.ideaDescription && (
-                    <p className="mt-1 text-xs text-red-600 font-bold">{errors.startupRoulette.ideaDescription.message}</p>
-                  )}
-                </div>
-              </div>
             </div>
           )}
 

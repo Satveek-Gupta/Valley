@@ -14,11 +14,15 @@ CREATE TABLE IF NOT EXISTS public.registrations_startup_roulette (
     team_name TEXT NOT NULL,
     team_leader_name TEXT NOT NULL,
     team_members_names TEXT NOT NULL,
-    idea_name TEXT NOT NULL,
-    idea_description TEXT NOT NULL,
+    idea_name TEXT,
+    idea_description TEXT,
     status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure nullable columns if table was created previously with NOT NULL
+ALTER TABLE public.registrations_startup_roulette ALTER COLUMN idea_name DROP NOT NULL;
+ALTER TABLE public.registrations_startup_roulette ALTER COLUMN idea_description DROP NOT NULL;
 
 -- 1.2 The War Room Registrations
 CREATE TABLE IF NOT EXISTS public.registrations_the_war_room (

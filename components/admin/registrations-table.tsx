@@ -269,7 +269,7 @@ export default function RegistrationsTable({
       case "the-boardroom":
         return { label: "The Boardroom", color: "bg-orange-100 text-[#FF5A36] border-orange-200" };
       case "entre-prenormie":
-        return { label: "Entre-Prenormie", color: "bg-purple-100 text-brand-violet border-purple-200" };
+        return { label: "Entrepre-Normie", color: "bg-purple-100 text-brand-violet border-purple-200" };
       case "bulls-and-bears":
         return { label: "Bulls & Bears", color: "bg-lime-100 text-emerald-800 border-lime-300" };
       default:

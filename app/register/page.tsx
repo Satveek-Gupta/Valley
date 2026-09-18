@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Register & Join Tracks | CABINET VALLEY 2026",
-  description: "Official registration portal for Cabinet Valley 2026. Register for Startup Roulette, The War Room, The Boardroom, Entre-Prenormie, Bulls & Bears, or book a Bay Area stall.",
+  description: "Official registration portal for Cabinet Valley 2026. Register for Startup Roulette, The War Room, The Boardroom, Entrepre-Normie, Bulls & Bears, or book a Bay Area stall.",
   keywords: [
     "Cabinet Valley Registration",
     "Startup Roulette Registration",

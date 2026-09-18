@@ -247,7 +247,7 @@ export default function AdminDashboard({
                 </div>
 
                 <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
-                  <div className="text-xs font-black uppercase text-brand-violet">Entre-Prenormie</div>
+                  <div className="text-xs font-black uppercase text-brand-violet">Entrepre-Normie</div>
                   <div className="font-display text-2xl font-bold text-brand-ink mt-1">{entreprenormieCount} 1-on-1s</div>
                   <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 3 · Founder Lounge</div>
                 </div>

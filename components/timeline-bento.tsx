@@ -179,7 +179,7 @@ export default function TimelineBento() {
               </div>
 
               <h3 className="font-display text-2xl font-black uppercase text-brand-ink mb-2">
-                ENTRE-PRENORMIE
+                ENTREPRE-NORMIE
               </h3>
 
               <p className="text-xs text-zinc-600 font-medium mb-4">

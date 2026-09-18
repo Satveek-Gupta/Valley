@@ -127,7 +127,7 @@ export const EVENTS_DATA: EventItem[] = [
   {
     id: "entre-prenormie",
     slug: "entre-prenormie",
-    name: "ENTRE-PRENORMIE",
+    name: "ENTREPRE-NORMIE",
     day: 3,
     dateLabel: "DAY 03",
     tagline: "1-on-1 Closed-Door Dialogue with Tech Founders",
@@ -243,7 +243,7 @@ export const TIMELINE_SCHEDULE = [
     subEvents: [
       {
         time: "10:00 AM – 1:00 PM",
-        name: "Entre-Prenormie: 1-on-1 Sessions",
+        name: "Entrepre-Normie: 1-on-1 Sessions",
         venue: "Founder Lounge",
         type: "Mentorship",
         badgeColor: "#7C3AED"
