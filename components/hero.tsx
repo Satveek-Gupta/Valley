@@ -42,7 +42,7 @@ export default function Hero() {
                   VALLEY
                 </span>
                 <span className="text-5xl sm:text-7xl lg:text-[96px] xl:text-[108px] leading-[0.88] text-black">
-                  2026
+                  1.0
                 </span>
               </h1>
             </div>

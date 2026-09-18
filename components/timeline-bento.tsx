@@ -53,7 +53,7 @@ export default function TimelineBento() {
               </div>
 
               <h3 className="font-display text-3xl sm:text-5xl font-black uppercase tracking-wide text-white mb-3">
-                DAY 01 — INAUGURAL EXPO & STARTUP ROULETTE
+                DAY 01 — BAY AREA & STARTUP ROULETTE
               </h3>
 
               <p className="text-xs sm:text-sm text-white/90 font-medium max-w-lg mb-6">
@@ -209,7 +209,7 @@ export default function TimelineBento() {
               </div>
 
               <h3 className="font-display text-2xl font-black uppercase text-white mb-2">
-                FINALE & AWARDS
+                Bulls & Bears
               </h3>
 
               <p className="text-xs text-zinc-300 font-medium mb-4">

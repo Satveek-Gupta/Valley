@@ -1,5 +1,6 @@
 import Navbar from "@/components/navbar";
 import Hero from "@/components/hero";
+import ChiefGuestSpotlight from "@/components/chief-guest-spotlight";
 import StatsBand from "@/components/stats-band";
 import EventsCarousel from "@/components/events-carousel";
 import SpotlightSection from "@/components/spotlight-section";
@@ -13,6 +14,7 @@ export default function Home() {
     <main className="min-h-screen flex flex-col bg-white">
       <Navbar />
       <Hero />
+      <ChiefGuestSpotlight />
       <StatsBand />
       <EventsCarousel />
       <SpotlightSection />
