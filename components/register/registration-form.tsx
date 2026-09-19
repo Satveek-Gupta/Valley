@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
+  ArrowUpRight,
   ShieldCheck,
   AlertCircle,
   Store,
@@ -318,14 +319,14 @@ export default function RegistrationForm() {
                 {/* Bottom: Specs & CTA Button */}
                 <div className="space-y-3 pt-4 border-t border-zinc-100">
                   <div className="flex flex-col gap-1 text-[11px] font-bold text-zinc-500">
-                    <div className="flex items-center gap-1.5">
+                    {/* <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-brand-violet" />
                       <span>{event.timing}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-brand-violet" />
                       <span>{event.venue}</span>
-                    </div>
+                    </div> */}
                     <div className="flex items-center gap-1.5 text-brand-ink">
                       <Users className="w-3.5 h-3.5 text-brand-violet" />
                       <span className="font-black uppercase">{event.teamSize}</span>
@@ -345,8 +346,8 @@ export default function RegistrationForm() {
           })}
         </div>
 
-        {/* Prominent Offline Notice for Bay Area Stalls */}
-        <div className="rounded-3xl border-2 border-brand-violet/40 bg-gradient-to-r from-purple-50 via-white to-orange-50 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
+        {/* Bay Area Stalls MS Forms Booking Banner */}
+        <div className="rounded-3xl border-2 border-brand-violet/40 bg-gradient-to-r from-purple-50 via-white to-orange-50 p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-2xl bg-brand-violet text-white flex items-center justify-center flex-shrink-0 shadow-md">
               <Store className="w-7 h-7" />
@@ -354,30 +355,30 @@ export default function RegistrationForm() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="px-2.5 py-0.5 rounded-full bg-brand-violet text-white text-[10px] font-black uppercase tracking-wider">
-                  OFFLINE REGISTRATION ONLY
+                  COMMERCIAL & STARTUP STALLS
                 </span>
                 <span className="text-xs font-bold text-zinc-500 font-mono">
-                  GERMAN HANGAR · 50 STALLS
+                  NEAR C5 & D5 HOSTELS · 55 UNITS
                 </span>
               </div>
               <h3 className="font-display text-xl sm:text-2xl font-black uppercase text-brand-ink">
                 LOOKING TO BOOK A BAY AREA STALL?
               </h3>
               <p className="text-xs font-semibold text-zinc-600 max-w-2xl mt-1 leading-relaxed">
-                Stall allotment for student ventures and commercial brands is handled <strong>exclusively offline</strong> via the Student Cabinet Coordination Desk. Online registration is not accepted for stalls.
+                Stall allotment for student ventures and commercial brands is open via our official Microsoft Form. Submit your application to secure your booth near C5 & D5 Hostels.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:items-end gap-2 flex-shrink-0 w-full sm:w-auto">
-            <div className="text-xs font-mono font-bold text-brand-violet bg-white px-3.5 py-2 rounded-xl border border-brand-violet/20 shadow-sm text-center">
-              German Hangar · 50 Units
-            </div>
-            <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wide text-center">
-              Contact Cabinet Desk On-Campus
-            </div>
-          </div>
-
+          <a
+            href="https://forms.cloud.microsoft/r/JFgLTYxc8m"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-brand-violet hover:bg-brand-violet-dark text-white text-xs font-black uppercase tracking-wider transition-all transform hover:scale-105 active:scale-95 shadow-md shadow-brand-violet/20 flex-shrink-0 w-full sm:w-auto"
+          >
+            <span>APPLY FOR STALL</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
         </div>
       </div>
     );

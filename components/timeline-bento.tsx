@@ -63,7 +63,7 @@ export default function TimelineBento() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 <div className="p-3.5 bg-black/20 rounded-2xl border border-white/10">
                   <div className="text-[10px] font-black uppercase tracking-wider text-brand-lime">
-                    BAY AREA (GERMAN HANGAR)
+                    BAY AREA (NEAR C5 & D5 HOSTELS)
                   </div>
                   <div className="text-xs font-bold text-white mt-0.5">10:00 AM – 6:00 PM</div>
                   {/* <div className="text-[11px] text-white/70">50 Stalls · Offline Desk Booking</div> */}

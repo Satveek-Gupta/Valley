@@ -257,14 +257,14 @@ export default function EventsCarousel() {
               </div>
             </div>
 
-            {/* Offline Booking Notice for Bay Area Stalls */}
+            {/* MS Forms Booking Notice for Bay Area Stalls */}
             {selectedEventModal.slug === "bay-area" && (
-              <div className="mb-6 p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900">
-                <div className="text-xs font-black uppercase tracking-wider text-amber-950 mb-1">
-                  OFFLINE ON-CAMPUS REGISTRATION ONLY
+              <div className="mb-6 p-4 rounded-2xl bg-purple-50 border-2 border-brand-violet/30 text-brand-ink">
+                <div className="text-xs font-black uppercase tracking-wider text-brand-violet mb-1">
+                  STALL APPLICATION VIA MICROSOFT FORMS
                 </div>
-                <p className="text-xs font-semibold leading-relaxed">
-                  Stalls in the German Hangar (50 curated units) are allocated <strong>exclusively offline</strong> through the Student Cabinet Coordination Desk. Online registration is not applicable for stall allotments.
+                <p className="text-xs font-semibold leading-relaxed text-zinc-700">
+                  Stalls near C5 & D5 Hostels (55 curated units) are allocated through our official Microsoft Form application. Click below to submit your business/venture details.
                 </p>
               </div>
             )}
@@ -295,9 +295,15 @@ export default function EventsCarousel() {
                 CLOSE
               </button>
               {selectedEventModal.slug === "bay-area" ? (
-                <div className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-zinc-900 text-brand-lime text-xs font-black uppercase tracking-wider shadow-md">
-                  <span>OFFLINE BOOKING ONLY</span>
-                </div>
+                <a
+                  href="https://forms.cloud.microsoft/r/JFgLTYxc8m"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-brand-violet hover:bg-brand-violet-dark text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-brand-violet/30 transition-all"
+                >
+                  <span>APPLY VIA MS FORMS</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </a>
               ) : (
                 <Link
                   href={`/register?event=${selectedEventModal.slug}`}

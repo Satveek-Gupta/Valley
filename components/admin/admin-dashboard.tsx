@@ -198,8 +198,8 @@ export default function AdminDashboard({
                   <span className="text-[10px] font-bold uppercase tracking-wider">BAY AREA OCCUPANCY</span>
                   <Store className="w-4 h-4 text-brand-lime" />
                 </div>
-                <div className="font-display text-4xl font-black text-brand-ink">{bayAreaCount} / 50</div>
-                <div className="text-[11px] text-zinc-500 font-bold mt-1">German Hangar Main Stalls</div>
+                <div className="font-display text-4xl font-black text-brand-ink">{bayAreaCount} / 55</div>
+                <div className="text-[11px] text-zinc-500 font-bold mt-1">Near C5 & D5 Hostels Main Stalls</div>
               </div>
 
               <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">

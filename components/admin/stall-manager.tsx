@@ -13,7 +13,7 @@ interface Stall {
   phone?: string;
 }
 
-const initialMainStalls: Stall[] = Array.from({ length: 50 }, (_, i) => {
+const initialMainStalls: Stall[] = Array.from({ length: 55 }, (_, i) => {
   const num = String(i + 1).padStart(2, "0");
   return {
     id: `M-${num}`,
@@ -73,10 +73,10 @@ export default function StallManager() {
       <div className="bg-brand-surface p-4 rounded-2xl border border-brand-border flex items-center justify-between gap-4">
         <div>
           <span className="text-[10px] font-black uppercase text-brand-violet bg-brand-violet/10 px-2.5 py-0.5 rounded-md">
-            OFFLINE STALL COORDINATION
+            STALL COORDINATION
           </span>
           <p className="text-xs font-bold text-brand-ink mt-1">
-            Bay Area Stalls (German Hangar) are reserved offline via the Student Cabinet desk. Use this floor manager to allocate stalls, record merchant contact names, and update payment statuses.
+            Bay Area Stalls (Near C5 & D5 Hostels) are allocated via the official MS Form and Cabinet desk. Use this floor manager to allocate stalls, record merchant contact names, and update payment statuses.
           </p>
         </div>
       </div>

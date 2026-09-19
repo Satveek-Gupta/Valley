@@ -64,7 +64,7 @@ export default function Footer() {
               </div>
 
               <p className="text-xs text-white/80 font-medium max-w-sm mb-6">
-                Organized by the Student Cabinet. 3 days of high-intensity startup battles, real-time trading simulations, and 50 dynamic startup & commercial stalls.
+                Organized by the Student Cabinet. 3 days of high-intensity startup battles, real-time trading simulations, and 55 dynamic startup & commercial stalls.
               </p>
             </div>
 

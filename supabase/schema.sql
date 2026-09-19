@@ -109,13 +109,13 @@ ALTER TABLE public.events ADD COLUMN IF NOT EXISTS rewards JSONB DEFAULT '[]'::j
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS rounds JSONB DEFAULT '[]'::jsonb;
 
 -- ==============================================================================
--- 3. BAY AREA STALLS (OFFLINE MANAGEMENT & FLOOR PLAN)
+-- 3. BAY AREA STALLS (FLOOR PLAN & STALL MANAGEMENT)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.stalls (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     stall_number TEXT UNIQUE NOT NULL,
     type TEXT NOT NULL DEFAULT 'main' CHECK (type IN ('main')),
-    venue TEXT NOT NULL DEFAULT 'German Hangar',
+    venue TEXT NOT NULL DEFAULT 'Near C5 & D5 Hostels',
     status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'pending', 'allocated', 'paid')),
     business_name TEXT,
     contact_person TEXT,
@@ -200,17 +200,17 @@ VALUES
     'BAY AREA STALLS',
     1,
     'DAY 01 & 02',
-    '50 Premier High-Footfall Commercial & Startup Stalls',
-    'The premier marketplace & startup exhibition floor of Cabinet Valley running across Day 1 & Day 2 (Offline On-Campus Desk Booking Only).',
+    '55 Premier High-Footfall Commercial & Startup Stalls',
+    'The premier marketplace & startup exhibition floor of Cabinet Valley running across Day 1 & Day 2 (Near C5 & D5 Hostels).',
     'Individual or Team',
     'Exhibition Floor',
-    'German Hangar',
+    'Near C5 & D5 Hostels',
     '10:00 AM – 6:00 PM',
     '#7C3AED',
     'violet',
     'Store',
     '[
-        {"round": 1, "title": "Main Stalls", "desc": "German Hangar · 50 curated stalls · Offline Desk Booking."}
+        {"round": 1, "title": "Main Stalls", "desc": "Near C5 & D5 Hostels · 55 curated stalls · Application via MS Forms."}
     ]'::jsonb,
     '[
         "Maximum footfall exhibition, direct student sales, brand partnerships."
@@ -338,14 +338,14 @@ ON CONFLICT (slug) DO UPDATE SET
     featured = EXCLUDED.featured,
     sort_order = EXCLUDED.sort_order;
 
--- Seed Stalls (Main 1-50)
+-- Seed Stalls (Main 1-55)
 INSERT INTO public.stalls (stall_number, type, venue, status)
 SELECT 
     'M-' || LPAD(n::text, 2, '0'),
     'main',
-    'German Hangar',
+    'Near C5 & D5 Hostels',
     'available'
-FROM generate_series(1, 50) AS n
+FROM generate_series(1, 55) AS n
 ON CONFLICT (stall_number) DO NOTHING;
 
 -- ==============================================================================

@@ -57,18 +57,18 @@ export const EVENTS_DATA: EventItem[] = [
     name: "BAY AREA STALLS",
     day: 1,
     dateLabel: "DAY 01 & 02",
-    tagline: "50 Premier High-Footfall Commercial & Startup Stalls",
+    tagline: "55 Premier High-Footfall Commercial & Startup Stalls",
     description: "The commercial heartbeat of Cabinet Valley. Student startups, brand pop-ups, and merchandise booths across 2 high-energy days.",
     teamSize: "Individual / Startup Teams",
     format: "2-Day Expo Floor",
-    venue: "German Hangar",
+    venue: "Near C5 & D5 Hostels",
     timing: "10:00 AM – 6:00 PM",
     badgeColor: "#7C3AED",
     tagType: "violet",
     iconName: "Store",
     featured: true,
     rounds: [
-      { round: 1, title: "Main Stalls (50 Units)", desc: "German Hangar · 50 curated stalls · Dedicated power & spotlight booths." }
+      { round: 1, title: "Main Stalls (55 Units)", desc: "Near C5 & D5 Hostels · 55 curated stalls · Dedicated power & spotlight booths." }
     ],
 
     rewards: [
@@ -83,21 +83,21 @@ export const EVENTS_DATA: EventItem[] = [
     day: 2,
     dateLabel: "DAY 02",
     tagline: "High-Stakes Live Asset Bidding & Emergency Pitching",
-    description: "Teams receive initial point reserves, battle in real-time blind bidding for business assets, and immediately craft market go-to strategies.",
+    description: "Points-based auction strategy: bid on mystery corporate assets, formulate a turnaround plan, and pitch to emergency turnaround judges.",
     teamSize: "5 Members",
-    format: "Live Auction + Pitch Battle",
+    format: "2 Elimination Rounds",
     venue: "Strategy Arena - Hall B",
     timing: "11:00 AM – 3:30 PM",
     badgeColor: "#2F6FED",
     tagType: "blue",
     iconName: "Swords",
     rounds: [
-      { round: 1, title: "The Bid", desc: "Strategic points auction. Bid on mystery assets and product patents on screen." },
-      { round: 2, title: "The Pitch", desc: "Synthesize acquired assets into a unified enterprise and pitch to venture evaluators." }
+      { round: 1, title: "The Asset Auction", desc: "Teams receive initial points to bid on distressed tech companies and real-world IP." },
+      { round: 2, title: "Turnaround Pitch", desc: "Teams deliver a 4-minute crisis pitch to venture judges explaining how they will rebuild the asset." }
     ],
     rewards: [
-      "Winning Team: Physical Certificates + Goodie Packs",
-      "Best Individual Pitch: 3-Month Founder's Office Internship"
+      "Top Team: Physical Certificates & Exclusive Goodies",
+      "Best Individual Negotiator: 3-Month Founder's Office Internship"
     ],
     internshipOpportunity: "3-Month Founder's Office Internship"
   },
@@ -107,21 +107,21 @@ export const EVENTS_DATA: EventItem[] = [
     name: "THE BOARDROOM",
     day: 2,
     dateLabel: "DAY 02",
-    tagline: "Executive Case Study Simulation",
-    description: "Duos are thrust into a sudden corporate crisis. Deconstruct balance sheets, craft turnaround roadmaps, and withstand ruthless board interrogation.",
+    tagline: "Executive Case-Study Resolution Simulation",
+    description: "High-intensity corporate problem solving: receive a real-world enterprise crisis file and pitch your turnaround framework to the executive board.",
     teamSize: "2 Members (Duos)",
-    format: "90-Min Case Crack + Board Defense",
-    venue: "Executive Suite A",
+    format: "Case Resolution",
+    venue: "Executive Conference Suite",
     timing: "2:00 PM – 5:30 PM",
     badgeColor: "#FF5A36",
     tagType: "orange",
     iconName: "Briefcase",
     rounds: [
-      { round: 1, title: "Crisis Dossier", desc: "Confidential crisis dossier revealed with 90-minute deliberation clock." },
-      { round: 2, title: "Executive Defense", desc: "Present strategic restructuring roadmap directly to the mock boardroom." }
+      { round: 1, title: "Crisis Dossier Analysis", desc: "Duos receive confidential business dilemma and 90-minute structured analysis window." },
+      { round: 2, title: "Board Presentation", desc: "Present strategic diagnostic framework and actionable roadmap directly to the mock board." }
     ],
     rewards: [
-      "Winning Duos: Physical Certificates + Mentorship Access"
+      "Winning Duos: Physical Certificates & Direct Venture Mentorship Access"
     ]
   },
   {
@@ -130,21 +130,20 @@ export const EVENTS_DATA: EventItem[] = [
     name: "ENTREPRE-NORMIE",
     day: 3,
     dateLabel: "DAY 03",
-    tagline: "1-on-1 Closed-Door Dialogue with Tech Founders",
-    description: "Cut through the noise. Get uninterrupted 1-to-1 mentoring, pitch feedback, and career guidance directly from verified startup founders.",
+    tagline: "Intimate 1-on-1 Founder Dialogues",
+    description: "Exclusive closed-room 1-on-1 mentorship sessions between students and top tech founders to dissect startups, fundraising, and career blueprints.",
     teamSize: "Individual (1-on-1)",
-    format: "Private Founder Sessions",
-    venue: "Founder Lounge - Block 4",
+    format: "Direct Mentorship",
+    venue: "Mentor Lounge - Block 4",
     timing: "10:00 AM – 1:00 PM",
     badgeColor: "#7C3AED",
     tagType: "violet",
     iconName: "Users",
     rounds: [
-      { round: 1, title: "1-to-1 Session", desc: "Personalized 20-minute breakout on fundraising, growth, or product teardown." }
+      { round: 1, title: "Founder Dialogue", desc: "Curated 1-to-1 deep dive into career, fundraising, or product feedback with seasoned entrepreneurs." }
     ],
     rewards: [
-      "All Participants: Verified Digital Certificates signed by the founders",
-      "Direct investor & founder network connections"
+      "All Participants: Verified Digital Certificates Signed by Mentors"
     ]
   },
   {
@@ -153,22 +152,21 @@ export const EVENTS_DATA: EventItem[] = [
     name: "BULLS & BEARS",
     day: 3,
     dateLabel: "DAY 03",
-    tagline: "Live Stock Market Quiz & Portfolio Trading Simulation",
-    description: "Fastest-finger-first financial analytics, algorithmic market shocks, and live portfolio rebalancing on the Cabinet trading floor.",
-    teamSize: "Individual Participation",
-    format: "Speed Quiz + Real-Time Trading",
+    tagline: "Real-Time Stock Market Quiz & Trading Battle",
+    description: "Fast-paced financial trivia and portfolio management simulation with dynamic live leaderboard and real-time market shift scenarios.",
+    teamSize: "Individual Only",
+    format: "Speed Quiz & Trading",
     venue: "Terminal Lab 1",
     timing: "1:30 PM – 3:30 PM",
     badgeColor: "#C6F135",
     tagType: "lime",
     iconName: "TrendingUp",
     rounds: [
-      { round: 1, title: "Market Sprint Quiz", desc: "Rapid-fire equity, crypto, and macro finance quiz on live terminals." },
-      { round: 2, title: "Portfolio Sim", desc: "Simulated market shock scenarios with dynamic real-time leaderboard." }
+      { round: 1, title: "Market Sprint", desc: "Fast-paced financial analysis quiz with live ticker updates and elimination rounds." },
+      { round: 2, title: "Portfolio Run", desc: "Rapid capital allocation game testing market intuition under sudden volatility spikes." }
     ],
     rewards: [
-      "Featured on Cabinet Wall of Fame",
-      "Official Certificate of Financial Mastery"
+      "Certificate of Financial Mastery + Featured spot on Cabinet Wall of Fame"
     ]
   }
 ];
@@ -184,7 +182,7 @@ export const TIMELINE_SCHEDULE = [
       {
         time: "10:00 AM",
         name: "Bay Area Grand Opening",
-        venue: "German Hangar",
+        venue: "Near C5 & D5 Hostels",
         type: "Expo",
         badgeColor: "#7C3AED"
       },
@@ -198,7 +196,7 @@ export const TIMELINE_SCHEDULE = [
       {
         time: "All Day till 6:00 PM",
         name: "Commercial Showcase & Expo",
-        venue: "German Hangar",
+        venue: "Near C5 & D5 Hostels",
         type: "Networking",
         badgeColor: "#C6F135"
       }
@@ -214,7 +212,7 @@ export const TIMELINE_SCHEDULE = [
       {
         time: "10:00 AM – 6:00 PM",
         name: "Bay Area Stalls Day 2",
-        venue: "German Hangar",
+        venue: "Near C5 & D5 Hostels",
         type: "Expo",
         badgeColor: "#7C3AED"
       },
@@ -269,7 +267,7 @@ export const TIMELINE_SCHEDULE = [
 export const STATS_METRICS = [
   { value: "3 DAYS", label: "TOTAL DURATION", highlight: false },
   { value: "7 EVENTS", label: "COMPETITIONS & EXPO", highlight: true },
-  { value: "50+ STALLS", label: "BAY AREA FLOOR", highlight: false },
+  { value: "55 STALLS", label: "BAY AREA FLOOR", highlight: false },
   { value: "OFFICIAL", label: "CERTIFICATES & GOODIES", highlight: false },
   { value: "15,000+", label: "ATTENDEES EXPECTED", highlight: false }
 ];

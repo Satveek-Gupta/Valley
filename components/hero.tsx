@@ -66,7 +66,7 @@ export default function Hero() {
                   </div>
                   <div className="w-px h-8 bg-white/20" />
                   <div>
-                    <div className="font-display text-2xl sm:text-3xl font-bold leading-none">50+</div>
+                    <div className="font-display text-2xl sm:text-3xl font-bold leading-none">55</div>
                     <div className="text-[9px] uppercase tracking-wider text-white/70 mt-1 font-bold">STALLS</div>
                   </div>
                 </div>
