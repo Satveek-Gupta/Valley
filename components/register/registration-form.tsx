@@ -332,7 +332,6 @@ export default function RegistrationForm() {
                       <span className="font-black uppercase">{event.teamSize}</span>
                     </div>
                   </div>
-
                   <button
                     type="button"
                     className="w-full py-2.5 px-4 rounded-xl bg-brand-ink group-hover:bg-brand-violet text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-sm"
@@ -561,9 +560,9 @@ export default function RegistrationForm() {
               <div className="space-y-2 pt-2 border-t border-zinc-200">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-black uppercase tracking-wider text-brand-ink">
-                    TEAM MEMBERS&apos; NAMES <span className="text-red-500">*</span> (4 ADDITIONAL MEMBERS)
+                    TEAM MEMBERS&apos; NAMES (2 TO 4 ADDITIONAL MEMBERS)
                   </label>
-                  <span className="text-[11px] font-mono text-zinc-400 font-bold">5-MEMBER ROSTER</span>
+                  <span className="text-[11px] font-mono text-zinc-500 font-bold">3–5 MEMBER ROSTER</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -605,11 +604,11 @@ export default function RegistrationForm() {
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
-                      Member 4 Full Name <span className="text-red-500">*</span>
+                      Member 4 Full Name <span className="text-zinc-400 font-normal">(OPTIONAL)</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Full Name"
+                      placeholder="Full Name (Optional)"
                       value={rouletteMembers[2]}
                       onChange={(e) => {
                         const updated = [...rouletteMembers];
@@ -623,11 +622,11 @@ export default function RegistrationForm() {
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
-                      Member 5 Full Name <span className="text-red-500">*</span>
+                      Member 5 Full Name <span className="text-zinc-400 font-normal">(OPTIONAL)</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Full Name"
+                      placeholder="Full Name (Optional)"
                       value={rouletteMembers[3]}
                       onChange={(e) => {
                         const updated = [...rouletteMembers];
@@ -669,9 +668,9 @@ export default function RegistrationForm() {
               <div className="space-y-2 pt-2 border-t border-zinc-200">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-black uppercase tracking-wider text-brand-ink">
-                    TEAM MEMBERS&apos; NAMES <span className="text-red-500">*</span> (4 ADDITIONAL MEMBERS)
+                    TEAM MEMBERS&apos; NAMES (2 TO 4 ADDITIONAL MEMBERS)
                   </label>
-                  <span className="text-[11px] font-mono text-zinc-400 font-bold">5-MEMBER ROSTER</span>
+                  <span className="text-[11px] font-mono text-zinc-500 font-bold">3–5 MEMBER ROSTER</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -713,11 +712,11 @@ export default function RegistrationForm() {
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
-                      Member 4 Full Name <span className="text-red-500">*</span>
+                      Member 4 Full Name <span className="text-zinc-400 font-normal">(OPTIONAL)</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Full Name"
+                      placeholder="Full Name (Optional)"
                       value={warRoomMembers[2]}
                       onChange={(e) => {
                         const updated = [...warRoomMembers];
@@ -731,11 +730,11 @@ export default function RegistrationForm() {
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-zinc-600 mb-1">
-                      Member 5 Full Name <span className="text-red-500">*</span>
+                      Member 5 Full Name <span className="text-zinc-400 font-normal">(OPTIONAL)</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Full Name"
+                      placeholder="Full Name (Optional)"
                       value={warRoomMembers[3]}
                       onChange={(e) => {
                         const updated = [...warRoomMembers];

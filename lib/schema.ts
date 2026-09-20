@@ -82,11 +82,11 @@ export const registrationSchema = z.object({
         ?.split(",")
         .map((s) => s.trim())
         .filter(Boolean) || [];
-    if (rouletteMembers.length < 4) {
+    if (rouletteMembers.length < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["startupRoulette", "teamMembersNames"],
-        message: "Startup Roulette requires exactly 5 participants (1 Leader + 4 Team Members)",
+        message: "Startup Roulette requires 3 to 5 participants (1 Leader + at least 2 additional team members)",
       });
     }
   }
@@ -104,11 +104,11 @@ export const registrationSchema = z.object({
         ?.split(",")
         .map((s) => s.trim())
         .filter(Boolean) || [];
-    if (warRoomMembers.length < 4) {
+    if (warRoomMembers.length < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["theWarRoom", "teamMembersNames"],
-        message: "Please fill in all 4 team members for the 5-member War Room roster",
+        message: "The War Room requires 3 to 5 participants (1 Leader + at least 2 additional team members)",
       });
     }
   }
