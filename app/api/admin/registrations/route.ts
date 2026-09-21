@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   if (isSupabaseConfigured && supabaseAdmin) {
     try {
@@ -10,6 +13,7 @@ export async function GET(req: NextRequest) {
         boardroomRes,
         entreRes,
         bullsRes,
+        regEventsRes,
       ] = await Promise.all([
         supabaseAdmin
           .from("registrations_startup_roulette")
@@ -31,69 +35,131 @@ export async function GET(req: NextRequest) {
           .from("registrations_bulls_and_bears")
           .select("*")
           .order("created_at", { ascending: false }),
+        supabaseAdmin
+          .from("registration_events")
+          .select("id, event_slug, qr_token, checked_in_at, checked_in_by, details")
+          .order("created_at", { ascending: false }),
       ]);
 
-      const startupRoulette = (rouletteRes.data || []).map((r: any) => ({
-        id: r.id,
-        fullName: r.full_name,
-        email: r.email,
-        phone: r.phone,
-        eventSlug: "startup-roulette",
-        teamName: r.team_name,
-        teamLeaderName: r.team_leader_name,
-        teamMembersNames: r.team_members_names,
-        ideaName: r.idea_name,
-        ideaDescription: r.idea_description,
-        status: r.status,
-        createdAt: r.created_at,
-      }));
+      // Map checked_in_at and checked_in_by by qr_token or event_slug + teamName
+      const checkinMap = new Map<string, { checkedInAt?: string; checkedInBy?: string; qrToken?: string }>();
+      for (const ev of regEventsRes.data || []) {
+        if (ev.qr_token) {
+          checkinMap.set(ev.qr_token, {
+            checkedInAt: ev.checked_in_at,
+            checkedInBy: ev.checked_in_by,
+            qrToken: ev.qr_token,
+          });
+        }
+        if (ev.event_slug && ev.details?.teamName) {
+          checkinMap.set(`${ev.event_slug}:${ev.details.teamName.toLowerCase().trim()}`, {
+            checkedInAt: ev.checked_in_at,
+            checkedInBy: ev.checked_in_by,
+            qrToken: ev.qr_token,
+          });
+        }
+      }
 
-      const theWarRoom = (warRoomRes.data || []).map((r: any) => ({
-        id: r.id,
-        fullName: r.full_name,
-        email: r.email,
-        phone: r.phone,
-        eventSlug: "the-war-room",
-        teamName: r.team_name,
-        teamLeaderName: r.team_leader_name,
-        teamMembersNames: r.team_members_names,
-        status: r.status,
-        createdAt: r.created_at,
-      }));
+      const startupRoulette = (rouletteRes.data || []).map((r: any) => {
+        const checkinInfo =
+          (r.id && checkinMap.get(r.id)) ||
+          (r.team_name && checkinMap.get(`startup-roulette:${r.team_name.toLowerCase().trim()}`)) ||
+          {};
+        return {
+          id: r.id,
+          fullName: r.full_name,
+          email: r.email,
+          phone: r.phone,
+          eventSlug: "startup-roulette",
+          teamName: r.team_name,
+          teamLeaderName: r.team_leader_name,
+          teamMembersNames: r.team_members_names,
+          ideaName: r.idea_name,
+          ideaDescription: r.idea_description,
+          status: r.status,
+          checkedInAt: r.checked_in_at || checkinInfo.checkedInAt || null,
+          checkedInBy: r.checked_in_by || checkinInfo.checkedInBy || null,
+          qrToken: r.qr_token || checkinInfo.qrToken || r.id,
+          createdAt: r.created_at,
+        };
+      });
 
-      const theBoardroom = (boardroomRes.data || []).map((r: any) => ({
-        id: r.id,
-        fullName: r.full_name,
-        email: r.email,
-        phone: r.phone,
-        eventSlug: "the-boardroom",
-        teamName: r.team_name,
-        teamLeaderName: r.team_leader_name,
-        partnerName: r.partner_name,
-        status: r.status,
-        createdAt: r.created_at,
-      }));
+      const theWarRoom = (warRoomRes.data || []).map((r: any) => {
+        const checkinInfo =
+          (r.id && checkinMap.get(r.id)) ||
+          (r.team_name && checkinMap.get(`the-war-room:${r.team_name.toLowerCase().trim()}`)) ||
+          {};
+        return {
+          id: r.id,
+          fullName: r.full_name,
+          email: r.email,
+          phone: r.phone,
+          eventSlug: "the-war-room",
+          teamName: r.team_name,
+          teamLeaderName: r.team_leader_name,
+          teamMembersNames: r.team_members_names,
+          status: r.status,
+          checkedInAt: r.checked_in_at || checkinInfo.checkedInAt || null,
+          checkedInBy: r.checked_in_by || checkinInfo.checkedInBy || null,
+          qrToken: r.qr_token || checkinInfo.qrToken || r.id,
+          createdAt: r.created_at,
+        };
+      });
 
-      const entrePrenormie = (entreRes.data || []).map((r: any) => ({
-        id: r.id,
-        fullName: r.full_name,
-        email: r.email,
-        phone: r.phone,
-        eventSlug: "entre-prenormie",
-        founderDiscussionTopic: r.founder_discussion_topic,
-        status: r.status,
-        createdAt: r.created_at,
-      }));
+      const theBoardroom = (boardroomRes.data || []).map((r: any) => {
+        const checkinInfo =
+          (r.id && checkinMap.get(r.id)) ||
+          (r.team_name && checkinMap.get(`the-boardroom:${r.team_name.toLowerCase().trim()}`)) ||
+          {};
+        return {
+          id: r.id,
+          fullName: r.full_name,
+          email: r.email,
+          phone: r.phone,
+          eventSlug: "the-boardroom",
+          teamName: r.team_name,
+          teamLeaderName: r.team_leader_name,
+          partnerName: r.partner_name,
+          status: r.status,
+          checkedInAt: r.checked_in_at || checkinInfo.checkedInAt || null,
+          checkedInBy: r.checked_in_by || checkinInfo.checkedInBy || null,
+          qrToken: r.qr_token || checkinInfo.qrToken || r.id,
+          createdAt: r.created_at,
+        };
+      });
 
-      const bullsAndBears = (bullsRes.data || []).map((r: any) => ({
-        id: r.id,
-        fullName: r.full_name,
-        email: r.email,
-        phone: r.phone,
-        eventSlug: "bulls-and-bears",
-        status: r.status,
-        createdAt: r.created_at,
-      }));
+      const entrePrenormie = (entreRes.data || []).map((r: any) => {
+        const checkinInfo = (r.id && checkinMap.get(r.id)) || {};
+        return {
+          id: r.id,
+          fullName: r.full_name,
+          email: r.email,
+          phone: r.phone,
+          eventSlug: "entre-prenormie",
+          founderDiscussionTopic: r.founder_discussion_topic,
+          status: r.status,
+          checkedInAt: r.checked_in_at || checkinInfo.checkedInAt || null,
+          checkedInBy: r.checked_in_by || checkinInfo.checkedInBy || null,
+          qrToken: r.qr_token || checkinInfo.qrToken || r.id,
+          createdAt: r.created_at,
+        };
+      });
+
+      const bullsAndBears = (bullsRes.data || []).map((r: any) => {
+        const checkinInfo = (r.id && checkinMap.get(r.id)) || {};
+        return {
+          id: r.id,
+          fullName: r.full_name,
+          email: r.email,
+          phone: r.phone,
+          eventSlug: "bulls-and-bears",
+          status: r.status,
+          checkedInAt: r.checked_in_at || checkinInfo.checkedInAt || null,
+          checkedInBy: r.checked_in_by || checkinInfo.checkedInBy || null,
+          qrToken: r.qr_token || checkinInfo.qrToken || r.id,
+          createdAt: r.created_at,
+        };
+      });
 
       const all = [
         ...startupRoulette,
@@ -163,12 +229,30 @@ export async function DELETE(req: NextRequest) {
     }
 
     if (isSupabaseConfigured && supabaseAdmin) {
+      // First get qr_token if present
+      const { data: existingRow } = await supabaseAdmin
+        .from(tableName)
+        .select("qr_token")
+        .eq("id", id)
+        .maybeSingle();
+
       const { error } = await supabaseAdmin
         .from(tableName)
         .delete()
         .eq("id", id);
 
       if (error) throw error;
+
+      // Also clean up from registration_events if any legacy record exists
+      try {
+        const tokenToDelete = existingRow?.qr_token || id;
+        await supabaseAdmin
+          .from("registration_events")
+          .delete()
+          .or(`id.eq.${id},qr_token.eq.${tokenToDelete}`);
+      } catch (legacyErr) {
+        // ignore if table or record doesn't exist
+      }
     }
 
     return NextResponse.json({

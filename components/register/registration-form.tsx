@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +19,6 @@ import {
   Briefcase,
   Users,
   TrendingUp,
-  Download,
   RotateCcw,
   Clock,
   MapPin,
@@ -238,13 +238,13 @@ export default function RegistrationForm() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
-            onClick={() => window.print()}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-brand-ink text-white font-black text-xs uppercase tracking-wider hover:bg-brand-violet transition-colors"
+          <Link
+            href="/my-registrations"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-brand-violet text-white font-black text-xs uppercase tracking-wider hover:bg-brand-violet-dark transition-colors shadow-md"
           >
-            <Download className="w-4 h-4" />
-            <span>PRINT / SAVE PASS</span>
-          </button>
+            <span>VIEW QR PASSES</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
 
           <button
             onClick={() => {
@@ -252,10 +252,10 @@ export default function RegistrationForm() {
               reset();
               handleBackToEventSelection();
             }}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border-2 border-brand-ink text-brand-ink font-black text-xs uppercase tracking-wider hover:bg-zinc-100 transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-brand-ink text-brand-ink font-black text-xs uppercase tracking-wider hover:bg-zinc-100 transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>REGISTER FOR ANOTHER EVENT</span>
+            <span>REGISTER ANOTHER</span>
           </button>
         </div>
       </div>
@@ -814,7 +814,7 @@ export default function RegistrationForm() {
                 INDIVIDUAL TRADING TERMINAL ACCESS
               </h4>
               <p className="text-xs font-bold text-zinc-700">
-                ✓ No team formation required. Your personal trading terminal credentials for Day 3 (Terminal Lab 1) will be issued upon pass generation.
+                ✓ No team formation required. Your personal trading terminal credentials for Day 3 (301 ALH) will be issued upon pass generation.
               </p>
             </div>
           )}

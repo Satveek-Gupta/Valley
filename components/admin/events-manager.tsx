@@ -429,7 +429,7 @@ export default function EventsManager() {
                   type="text"
                   value={formData.venue}
                   onChange={(e) => handleInputChange("venue", e.target.value)}
-                  placeholder="e.g. Main Auditorium"
+                  placeholder="e.g. Hexagon or 301 ALH"
                   required
                   className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-violet"
                 />

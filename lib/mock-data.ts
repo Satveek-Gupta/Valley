@@ -34,8 +34,8 @@ export const EVENTS_DATA: EventItem[] = [
     description: "Pitch your own startup, swap decks with a rival in Round 2, and defend a notorious bankrupt startup in Sell the Scam.",
     teamSize: "3–5 Members (12 Teams Max)",
     format: "3 Elimination Rounds",
-    venue: "Main Auditorium",
-    timing: "11:00 AM – 4:00 PM",
+    venue: "Hexagon",
+    timing: "6:30pm onwards",
     badgeColor: "#FF5A36",
     tagType: "orange",
     iconName: "Sparkles",
@@ -86,8 +86,8 @@ export const EVENTS_DATA: EventItem[] = [
     description: "Points-based auction strategy: bid on mystery corporate assets, formulate a turnaround plan, and pitch to emergency turnaround judges.",
     teamSize: "3–5 Members",
     format: "2 Elimination Rounds",
-    venue: "Strategy Arena - Hall B",
-    timing: "11:00 AM – 3:30 PM",
+    venue: "301 ALH",
+    timing: "6:30pm onwards",
     badgeColor: "#2F6FED",
     tagType: "blue",
     iconName: "Swords",
@@ -111,8 +111,8 @@ export const EVENTS_DATA: EventItem[] = [
     description: "High-intensity corporate problem solving: receive a real-world enterprise crisis file and pitch your turnaround framework to the executive board.",
     teamSize: "2 Members (Duos)",
     format: "Case Resolution",
-    venue: "Executive Conference Suite",
-    timing: "2:00 PM – 5:30 PM",
+    venue: "Hexagon",
+    timing: "6:30pm onwards",
     badgeColor: "#FF5A36",
     tagType: "orange",
     iconName: "Briefcase",
@@ -134,8 +134,8 @@ export const EVENTS_DATA: EventItem[] = [
     description: "Exclusive closed-room 1-on-1 mentorship sessions between students and top tech founders to dissect startups, fundraising, and career blueprints.",
     teamSize: "Individual (1-on-1)",
     format: "Direct Mentorship",
-    venue: "Mentor Lounge - Block 4",
-    timing: "10:00 AM – 1:00 PM",
+    venue: "002 ALH",
+    timing: "6:30pm onwards",
     badgeColor: "#7C3AED",
     tagType: "violet",
     iconName: "Users",
@@ -156,8 +156,8 @@ export const EVENTS_DATA: EventItem[] = [
     description: "Fast-paced financial trivia and portfolio management simulation with dynamic live leaderboard and real-time market shift scenarios.",
     teamSize: "Individual Only",
     format: "Speed Quiz & Trading",
-    venue: "Terminal Lab 1",
-    timing: "1:30 PM – 3:30 PM",
+    venue: "301 ALH",
+    timing: "6:30pm onwards",
     badgeColor: "#C6F135",
     tagType: "lime",
     iconName: "TrendingUp",
@@ -187,9 +187,9 @@ export const TIMELINE_SCHEDULE = [
         badgeColor: "#7C3AED"
       },
       {
-        time: "11:00 AM – 4:00 PM",
+        time: "6:30 PM Onwards",
         name: "Startup Roulette: Rounds 1-3",
-        venue: "Main Auditorium",
+        venue: "Hexagon",
         type: "Pitch",
         badgeColor: "#FF5A36"
       },
@@ -217,16 +217,16 @@ export const TIMELINE_SCHEDULE = [
         badgeColor: "#7C3AED"
       },
       {
-        time: "11:00 AM – 3:30 PM",
+        time: "6:30 PM Onwards",
         name: "The War Room: Auction & Pitch",
-        venue: "Strategy Arena - Hall B",
+        venue: "301 ALH",
         type: "Bidding",
         badgeColor: "#2F6FED"
       },
       {
-        time: "2:00 PM – 5:30 PM",
+        time: "6:30 PM Onwards",
         name: "The Boardroom: Crisis Case Crack",
-        venue: "Executive Suite A",
+        venue: "Hexagon",
         type: "Case Study",
         badgeColor: "#FF5A36"
       }
@@ -240,23 +240,23 @@ export const TIMELINE_SCHEDULE = [
     featuredEvent: EVENTS_DATA[5],
     subEvents: [
       {
-        time: "10:00 AM – 1:00 PM",
+        time: "6:30 PM Onwards",
         name: "Entrepre-Normie: 1-on-1 Sessions",
-        venue: "Founder Lounge",
+        venue: "002 ALH",
         type: "Mentorship",
         badgeColor: "#7C3AED"
       },
       {
-        time: "1:30 PM – 3:30 PM",
+        time: "6:30 PM Onwards",
         name: "Bulls & Bears Trading Battle",
-        venue: "Terminal Lab 1",
+        venue: "301 ALH",
         type: "Trading Sim",
         badgeColor: "#C6F135"
       },
       {
-        time: "5:00 PM – 7:30 PM",
+        time: "9:00 PM Onwards",
         name: "Grand Rewarding Ceremony & Fest Finale",
-        venue: "Grand Open Air Arena",
+        venue: "Main Stage",
         type: "Ceremony",
         badgeColor: "#0A0A0A"
       }

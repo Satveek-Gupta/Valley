@@ -32,6 +32,9 @@ export interface EventRegistration {
   ideaDescription?: string;
   partnerName?: string;
   founderDiscussionTopic?: string;
+  checkedInAt?: string | null;
+  checkedInBy?: string | null;
+  qrToken?: string | null;
 }
 
 export default function RegistrationsTable({
@@ -81,14 +84,16 @@ export default function RegistrationsTable({
   })();
 
   const filteredRegistrations = currentList.filter((reg) => {
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
+    const shortCode = (reg.qrToken || reg.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(-4).toLowerCase();
     return (
       reg.fullName?.toLowerCase().includes(q) ||
       reg.email?.toLowerCase().includes(q) ||
       reg.phone?.includes(q) ||
       reg.id?.toLowerCase().includes(q) ||
       reg.teamName?.toLowerCase().includes(q) ||
-      reg.ideaName?.toLowerCase().includes(q)
+      reg.ideaName?.toLowerCase().includes(q) ||
+      shortCode.includes(q)
     );
   });
 
@@ -125,9 +130,13 @@ export default function RegistrationsTable({
     let rows: (string | undefined)[][] = [];
     let filename = `cabinet_valley_${activeEventTab}_registrations_${new Date().toISOString().slice(0, 10)}.csv`;
 
+    const getShortPassCode = (r: EventRegistration) =>
+      (r.qrToken || r.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase();
+
     if (activeEventTab === "startup-roulette") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Full Name",
         "Email",
         "Phone",
@@ -137,10 +146,13 @@ export default function RegistrationsTable({
         "Idea Name",
         "Pitch Description",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -150,11 +162,14 @@ export default function RegistrationsTable({
         `"${r.ideaName || ""}"`,
         `"${(r.ideaDescription || "").replace(/"/g, '""')}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else if (activeEventTab === "the-war-room") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Full Name",
         "Email",
         "Phone",
@@ -162,10 +177,13 @@ export default function RegistrationsTable({
         "Chief Negotiator (Leader)",
         "5-Member Roster",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -173,11 +191,14 @@ export default function RegistrationsTable({
         `"${r.teamLeaderName || ""}"`,
         `"${r.teamMembersNames || ""}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else if (activeEventTab === "the-boardroom") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Full Name",
         "Email",
         "Phone",
@@ -185,10 +206,13 @@ export default function RegistrationsTable({
         "Lead Partner",
         "Duo Partner",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -196,53 +220,70 @@ export default function RegistrationsTable({
         `"${r.teamLeaderName || ""}"`,
         `"${r.partnerName || r.teamMembersNames || ""}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else if (activeEventTab === "entre-prenormie") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Full Name",
         "Email",
         "Phone",
         "Founder Discussion Topic",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
         `"${(r.founderDiscussionTopic || "").replace(/"/g, '""')}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else if (activeEventTab === "bulls-and-bears") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Trader Name",
         "Email",
         "Phone",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else {
-      headers = ["Pass ID", "Full Name", "Email", "Phone", "Event", "Registered At", "Status"];
+      headers = ["Pass ID", "Gate Code", "Full Name", "Email", "Phone", "Event", "Registered At", "Gate Check-In", "Verified By", "Status"];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
         r.eventSlug,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     }
@@ -438,6 +479,7 @@ export default function RegistrationsTable({
                 )}
 
                 <th className="py-3.5 px-4">Submitted</th>
+                <th className="py-3.5 px-4">Gate Pass</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -452,7 +494,15 @@ export default function RegistrationsTable({
               ) : (
                 filteredRegistrations.map((reg) => (
                   <tr key={reg.id} className="hover:bg-zinc-50/80 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-brand-violet">{reg.id}</td>
+                    <td className="py-3.5 px-4 font-mono">
+                      <div className="font-bold text-brand-violet truncate max-w-[130px]" title={reg.id}>{reg.id}</div>
+                      <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded bg-zinc-100 text-[10px] font-mono font-black text-zinc-700 border border-zinc-200">
+                        <span className="text-zinc-400">CODE:</span>
+                        <span className="text-brand-violet font-black">
+                          {(reg.qrToken || reg.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}
+                        </span>
+                      </div>
+                    </td>
                     <td className="py-3.5 px-4 font-bold text-brand-ink">{reg.fullName}</td>
                     <td className="py-3.5 px-4 text-zinc-600">
                       <div>{reg.email}</div>
@@ -520,6 +570,31 @@ export default function RegistrationsTable({
                     <td className="py-3.5 px-4 text-zinc-500 font-mono text-[11px]">
                       {new Date(reg.createdAt).toLocaleDateString()}
                     </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {reg.checkedInAt ? (
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase border border-emerald-300">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>CHECKED IN</span>
+                          </span>
+                          <div className="text-[10px] font-mono text-zinc-500">
+                            {new Date(reg.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                          {reg.checkedInBy && (
+                            <div
+                              className="text-[10px] font-mono text-zinc-600 truncate max-w-[150px] font-semibold"
+                              title={`Verified by: ${reg.checkedInBy}`}
+                            >
+                              by: <span className="text-zinc-800 underline decoration-zinc-300">{reg.checkedInBy}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-[10px] font-bold uppercase border border-zinc-200">
+                          <span>PENDING</span>
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3.5 px-4">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">
                         <CheckCircle2 className="w-3 h-3" />
@@ -571,7 +646,13 @@ export default function RegistrationsTable({
               <h3 className="font-display text-2xl font-black uppercase text-brand-ink mt-2">
                 {selectedRecord.fullName}
               </h3>
-              <p className="font-mono text-xs text-zinc-500">{selectedRecord.id}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="font-mono text-xs text-zinc-500">{selectedRecord.id}</p>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-brand-surface border border-zinc-200 text-[11px] font-mono font-black text-brand-violet">
+                  <span className="text-zinc-400">CODE:</span>
+                  <span>{(selectedRecord.qrToken || selectedRecord.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}</span>
+                </span>
+              </div>
             </div>
 
             <div className="space-y-3 text-xs bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
@@ -593,6 +674,35 @@ export default function RegistrationsTable({
                 <span className="font-bold text-zinc-500">STATUS:</span>
                 <span className="font-bold text-emerald-700 uppercase">{selectedRecord.status}</span>
               </div>
+              <div className="flex justify-between items-start">
+                <span className="font-bold text-zinc-500">GATE CHECK-IN:</span>
+                {selectedRecord.checkedInAt ? (
+                  <div className="text-right">
+                    <span className="font-black text-emerald-700 uppercase block">
+                      CHECKED IN AT {new Date(selectedRecord.checkedInAt).toLocaleTimeString()} ({new Date(selectedRecord.checkedInAt).toLocaleDateString()})
+                    </span>
+                    {selectedRecord.checkedInBy && (
+                      <span className="text-[11px] font-mono text-zinc-600 block mt-1">
+                        Verified by: <strong className="text-brand-ink font-bold bg-zinc-200/80 px-2 py-0.5 rounded border border-zinc-300">{selectedRecord.checkedInBy}</strong>
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="font-bold text-zinc-400 uppercase">NOT CHECKED IN YET</span>
+                )}
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-zinc-200">
+                <span className="font-bold text-zinc-500">GATE PASS CODE:</span>
+                <span className="font-mono text-brand-violet text-sm font-black tracking-widest bg-white px-2 py-0.5 rounded border border-zinc-200">
+                  {(selectedRecord.qrToken || selectedRecord.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}
+                </span>
+              </div>
+              {selectedRecord.qrToken && (
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-zinc-500">QR TOKEN:</span>
+                  <span className="font-mono text-zinc-600 text-[10px] truncate max-w-[240px]">{selectedRecord.qrToken}</span>
+                </div>
+              )}
             </div>
 
             {/* Event Specific Sub-card in Modal */}

@@ -15,6 +15,8 @@ import {
   ExternalLink,
   ShieldAlert,
   Award,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import RegistrationsTable from "./registrations-table";
 import StallManager from "./stall-manager";
@@ -40,6 +42,9 @@ export default function AdminDashboard({
 
   // Calculations
   const totalRegistrations = initialRegistrations.length;
+  const checkedInRegistrations = initialRegistrations
+    .filter((r) => r.checkedInAt)
+    .sort((a, b) => new Date(b.checkedInAt).getTime() - new Date(a.checkedInAt).getTime());
   const rouletteCount = byEvent?.["startup-roulette"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "startup-roulette" || r.selectedEvents?.includes("startup-roulette")).length;
   const warRoomCount = byEvent?.["the-war-room"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "the-war-room" || r.selectedEvents?.includes("the-war-room")).length;
   const boardroomCount = byEvent?.["the-boardroom"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "the-boardroom" || r.selectedEvents?.includes("the-boardroom")).length;
@@ -80,6 +85,14 @@ export default function AdminDashboard({
                 {userEmail}
               </span>
             )}
+
+            <Link
+              href="/vol/scan"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-violet text-white text-xs font-black uppercase hover:bg-brand-violet-dark transition-colors shadow-sm"
+            >
+              <span>GATE SCANNER</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
 
             <Link
               href="/"
@@ -181,9 +194,33 @@ export default function AdminDashboard({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === "overview" && (
           <div className="space-y-8">
-            
+            {/* Gate Scan Station Banner */}
+            <div className="bg-brand-ink text-white p-6 rounded-3xl border-2 border-brand-violet flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-brand-lime animate-ping" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-lime">
+                    GATE OPERATIONS STATION
+                  </span>
+                </div>
+                <h3 className="font-display text-2xl font-black uppercase text-white">
+                  VOLUNTEER & GATE CHECK-IN SCANNER
+                </h3>
+                <p className="text-xs text-zinc-300 max-w-xl mt-1">
+                  Equip door volunteers with high-speed camera QR scanning for the 5 gated competitions with instant pass validation and multi-gate separation.
+                </p>
+              </div>
+              <Link
+                href="/vol/scan"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-brand-lime hover:bg-brand-lime-dark text-black font-black text-xs uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-md flex-shrink-0"
+              >
+                <span>OPEN SCAN STATION</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+
             {/* Top KPI row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
                 <div className="flex items-center justify-between text-zinc-500 mb-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider">TOTAL REGISTRATIONS</span>
@@ -191,6 +228,15 @@ export default function AdminDashboard({
                 </div>
                 <div className="font-display text-4xl font-black text-brand-ink">{totalRegistrations}</div>
                 <div className="text-[11px] text-emerald-600 font-bold mt-1">Live submissions logged</div>
+              </div>
+
+              <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
+                <div className="flex items-center justify-between text-zinc-500 mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">GATE CHECK-INS</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="font-display text-4xl font-black text-emerald-600">{checkedInRegistrations.length}</div>
+                <div className="text-[11px] text-zinc-500 font-bold mt-1">Passes verified at doors</div>
               </div>
 
               <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
@@ -213,12 +259,92 @@ export default function AdminDashboard({
 
               <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
                 <div className="flex items-center justify-between text-zinc-500 mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider">BULLS & BEARS TRADERS</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">BULLS & BEARS</span>
                   <TrendingUp className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div className="font-display text-4xl font-black text-brand-ink">{bullsCount}</div>
                 <div className="text-[11px] text-zinc-500 font-bold mt-1">Terminal Participants</div>
               </div>
+            </div>
+
+            {/* Recent Gate Check-in Activity Card */}
+            <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-zinc-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-700 flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-black uppercase text-brand-ink">
+                      RECENT GATE CHECK-INS ({checkedInRegistrations.length} VERIFIED)
+                    </h3>
+                    <p className="text-xs text-zinc-500">
+                      Live audit log showing who verified each attendee at competition gates
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  href="/vol/scan"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-surface border border-zinc-200 text-brand-violet hover:bg-brand-violet hover:text-white text-xs font-black uppercase transition-colors self-start sm:self-auto"
+                >
+                  <span>Open Scanner Station</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              {checkedInRegistrations.length === 0 ? (
+                <div className="py-12 text-center text-zinc-400 text-xs font-medium space-y-1">
+                  <Clock className="w-8 h-8 mx-auto text-zinc-300 mb-2" />
+                  <p className="font-bold text-zinc-500 uppercase">No gate check-ins logged yet</p>
+                  <p className="text-[11px]">Passes scanned by volunteers at /vol/scan will appear here in real-time.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-100 max-h-80 overflow-y-auto no-scrollbar">
+                  {checkedInRegistrations.slice(0, 10).map((reg) => (
+                    <div
+                      key={reg.id}
+                      className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs hover:bg-zinc-50/70 px-2 rounded-xl transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-brand-ink">{reg.fullName}</span>
+                            {reg.teamName && (
+                              <span className="text-zinc-500 font-medium">({reg.teamName})</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-zinc-400 font-mono text-[11px]">ID: {reg.id}</span>
+                            <span className="font-black text-brand-violet bg-brand-surface px-1.5 py-0.5 rounded border border-zinc-200 text-[10px] font-mono">
+                              CODE: {(reg.qrToken || reg.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-zinc-600 text-[11px]">
+                        <span className="font-bold uppercase text-brand-violet px-2 py-0.5 rounded bg-brand-violet/10 border border-brand-violet/20">
+                          {reg.eventSlug?.replace(/-/g, " ")}
+                        </span>
+                        <span className="font-mono text-zinc-500">
+                          {new Date(reg.checkedInAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-zinc-100 text-zinc-800 font-mono text-[11px] font-bold border border-zinc-200">
+                          Verified by:{" "}
+                          <strong className="text-brand-ink">
+                            {reg.checkedInBy || "Gate Volunteer"}
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Per-Track Breakdown Card */}
@@ -231,37 +357,37 @@ export default function AdminDashboard({
                 <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200">
                   <div className="text-xs font-black uppercase text-[#FF5A36]">Startup Roulette</div>
                   <div className="font-display text-2xl font-bold text-brand-ink mt-1">{rouletteCount} Registrations</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 1 · Main Auditorium</div>
+                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 1 · Hexagon</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200">
                   <div className="text-xs font-black uppercase text-[#2F6FED]">The War Room</div>
                   <div className="font-display text-2xl font-bold text-brand-ink mt-1">{warRoomCount} Registrations</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 2 · Strategy Arena</div>
+                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 2 · 301 ALH</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200">
                   <div className="text-xs font-black uppercase text-[#FF5A36]">The Boardroom</div>
                   <div className="font-display text-2xl font-bold text-brand-ink mt-1">{boardroomCount} Duos</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 2 · Executive Suite</div>
+                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 2 · Hexagon</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
                   <div className="text-xs font-black uppercase text-brand-violet">Entrepre-Normie</div>
                   <div className="font-display text-2xl font-bold text-brand-ink mt-1">{entreprenormieCount} 1-on-1s</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 3 · Founder Lounge</div>
+                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 3 · 002 ALH</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-lime-50 border border-lime-300">
                   <div className="text-xs font-black uppercase text-emerald-800">Bulls & Bears</div>
                   <div className="font-display text-2xl font-bold text-brand-ink mt-1">{bullsCount} Traders</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 3 · Terminal Lab</div>
+                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 3 · 301 ALH</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
                   <div className="text-xs font-black uppercase text-brand-violet">Bay Area Stalls</div>
                   <div className="font-display text-2xl font-bold text-brand-ink mt-1">{bayAreaCount} Stalls</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Days 1 & 2 · German Hangar</div>
+                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Days 1 & 2 · Near C5 & D5 Hostels</div>
                 </div>
               </div>
             </div>
