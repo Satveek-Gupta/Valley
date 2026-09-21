@@ -84,14 +84,16 @@ export default function RegistrationsTable({
   })();
 
   const filteredRegistrations = currentList.filter((reg) => {
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
+    const shortCode = (reg.qrToken || reg.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(-4).toLowerCase();
     return (
       reg.fullName?.toLowerCase().includes(q) ||
       reg.email?.toLowerCase().includes(q) ||
       reg.phone?.includes(q) ||
       reg.id?.toLowerCase().includes(q) ||
       reg.teamName?.toLowerCase().includes(q) ||
-      reg.ideaName?.toLowerCase().includes(q)
+      reg.ideaName?.toLowerCase().includes(q) ||
+      shortCode.includes(q)
     );
   });
 
@@ -128,9 +130,13 @@ export default function RegistrationsTable({
     let rows: (string | undefined)[][] = [];
     let filename = `cabinet_valley_${activeEventTab}_registrations_${new Date().toISOString().slice(0, 10)}.csv`;
 
+    const getShortPassCode = (r: EventRegistration) =>
+      (r.qrToken || r.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase();
+
     if (activeEventTab === "startup-roulette") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Full Name",
         "Email",
         "Phone",
@@ -146,6 +152,7 @@ export default function RegistrationsTable({
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -162,6 +169,7 @@ export default function RegistrationsTable({
     } else if (activeEventTab === "the-war-room") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Full Name",
         "Email",
         "Phone",
@@ -175,6 +183,7 @@ export default function RegistrationsTable({
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -189,6 +198,7 @@ export default function RegistrationsTable({
     } else if (activeEventTab === "the-boardroom") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Full Name",
         "Email",
         "Phone",
@@ -202,6 +212,7 @@ export default function RegistrationsTable({
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -216,6 +227,7 @@ export default function RegistrationsTable({
     } else if (activeEventTab === "entre-prenormie") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Full Name",
         "Email",
         "Phone",
@@ -227,6 +239,7 @@ export default function RegistrationsTable({
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -239,6 +252,7 @@ export default function RegistrationsTable({
     } else if (activeEventTab === "bulls-and-bears") {
       headers = [
         "Pass ID",
+        "Gate Code",
         "Trader Name",
         "Email",
         "Phone",
@@ -249,6 +263,7 @@ export default function RegistrationsTable({
       ];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -258,9 +273,10 @@ export default function RegistrationsTable({
         r.status,
       ]);
     } else {
-      headers = ["Pass ID", "Full Name", "Email", "Phone", "Event", "Registered At", "Gate Check-In", "Verified By", "Status"];
+      headers = ["Pass ID", "Gate Code", "Full Name", "Email", "Phone", "Event", "Registered At", "Gate Check-In", "Verified By", "Status"];
       rows = filteredRegistrations.map((r) => [
         r.id,
+        getShortPassCode(r),
         `"${r.fullName || ""}"`,
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
@@ -478,7 +494,15 @@ export default function RegistrationsTable({
               ) : (
                 filteredRegistrations.map((reg) => (
                   <tr key={reg.id} className="hover:bg-zinc-50/80 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-brand-violet">{reg.id}</td>
+                    <td className="py-3.5 px-4 font-mono">
+                      <div className="font-bold text-brand-violet truncate max-w-[130px]" title={reg.id}>{reg.id}</div>
+                      <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded bg-zinc-100 text-[10px] font-mono font-black text-zinc-700 border border-zinc-200">
+                        <span className="text-zinc-400">CODE:</span>
+                        <span className="text-brand-violet font-black">
+                          {(reg.qrToken || reg.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}
+                        </span>
+                      </div>
+                    </td>
                     <td className="py-3.5 px-4 font-bold text-brand-ink">{reg.fullName}</td>
                     <td className="py-3.5 px-4 text-zinc-600">
                       <div>{reg.email}</div>
@@ -622,7 +646,13 @@ export default function RegistrationsTable({
               <h3 className="font-display text-2xl font-black uppercase text-brand-ink mt-2">
                 {selectedRecord.fullName}
               </h3>
-              <p className="font-mono text-xs text-zinc-500">{selectedRecord.id}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="font-mono text-xs text-zinc-500">{selectedRecord.id}</p>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-brand-surface border border-zinc-200 text-[11px] font-mono font-black text-brand-violet">
+                  <span className="text-zinc-400">CODE:</span>
+                  <span>{(selectedRecord.qrToken || selectedRecord.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}</span>
+                </span>
+              </div>
             </div>
 
             <div className="space-y-3 text-xs bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
@@ -661,10 +691,16 @@ export default function RegistrationsTable({
                   <span className="font-bold text-zinc-400 uppercase">NOT CHECKED IN YET</span>
                 )}
               </div>
+              <div className="flex justify-between items-center pt-1 border-t border-zinc-200">
+                <span className="font-bold text-zinc-500">GATE PASS CODE:</span>
+                <span className="font-mono text-brand-violet text-sm font-black tracking-widest bg-white px-2 py-0.5 rounded border border-zinc-200">
+                  {(selectedRecord.qrToken || selectedRecord.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}
+                </span>
+              </div>
               {selectedRecord.qrToken && (
-                <div className="flex justify-between items-center pt-1 border-t border-zinc-200">
+                <div className="flex justify-between items-center">
                   <span className="font-bold text-zinc-500">QR TOKEN:</span>
-                  <span className="font-mono text-zinc-600 text-[10px]">{selectedRecord.qrToken}</span>
+                  <span className="font-mono text-zinc-600 text-[10px] truncate max-w-[240px]">{selectedRecord.qrToken}</span>
                 </div>
               )}
             </div>

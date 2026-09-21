@@ -315,7 +315,12 @@ export default function AdminDashboard({
                               <span className="text-zinc-500 font-medium">({reg.teamName})</span>
                             )}
                           </div>
-                          <span className="text-zinc-400 font-mono text-[11px]">ID: {reg.id}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-zinc-400 font-mono text-[11px]">ID: {reg.id}</span>
+                            <span className="font-black text-brand-violet bg-brand-surface px-1.5 py-0.5 rounded border border-zinc-200 text-[10px] font-mono">
+                              CODE: {(reg.qrToken || reg.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}
+                            </span>
+                          </div>
                         </div>
                       </div>
 

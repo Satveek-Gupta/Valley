@@ -19,7 +19,6 @@ import {
   Briefcase,
   Users,
   TrendingUp,
-  Download,
   RotateCcw,
   Clock,
   MapPin,
@@ -241,19 +240,11 @@ export default function RegistrationForm() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             href="/my-registrations"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-brand-violet text-white font-black text-xs uppercase tracking-wider hover:bg-brand-violet-dark transition-colors shadow-md"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-brand-violet text-white font-black text-xs uppercase tracking-wider hover:bg-brand-violet-dark transition-colors shadow-md"
           >
             <span>VIEW QR PASSES</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
-
-          <button
-            onClick={() => window.print()}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-brand-ink text-white font-black text-xs uppercase tracking-wider hover:bg-brand-violet transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span>PRINT / SAVE</span>
-          </button>
 
           <button
             onClick={() => {
@@ -261,7 +252,7 @@ export default function RegistrationForm() {
               reset();
               handleBackToEventSelection();
             }}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border-2 border-brand-ink text-brand-ink font-black text-xs uppercase tracking-wider hover:bg-zinc-100 transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-brand-ink text-brand-ink font-black text-xs uppercase tracking-wider hover:bg-zinc-100 transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
             <span>REGISTER ANOTHER</span>

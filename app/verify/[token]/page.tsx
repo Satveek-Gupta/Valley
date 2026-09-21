@@ -11,12 +11,20 @@ interface VerifyPageProps {
   params: Promise<{ token: string }>;
 }
 
+function getShortCode(val: string | null | undefined): string {
+  if (!val) return "";
+  return val.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase();
+}
+
 export default async function VerifyPage({ params }: VerifyPageProps) {
   const { token } = await params;
 
   if (!token) {
     notFound();
   }
+
+  const cleanToken = token.trim().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  const isShortCode = cleanToken.length > 0 && cleanToken.length <= 4;
 
   let eventReg: any = null;
   let participant: any = null;
@@ -33,28 +41,62 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
 
     for (const item of eventTableLookups) {
       try {
-        const { data } = await supabaseAdmin
-          .from(item.table)
-          .select("*")
-          .or(`qr_token.eq.${token},id.eq.${token}`)
-          .maybeSingle();
+        if (isShortCode) {
+          const { data: rows } = await supabaseAdmin
+            .from(item.table)
+            .select("*");
 
-        if (data) {
-          eventReg = {
-            id: data.id,
-            event_slug: item.slug,
-            checked_in_at: data.checked_in_at,
-            details: {
-              teamName: data.team_name || null,
-              teamLeaderName: data.team_leader_name || data.full_name,
-              teamMembersNames: data.team_members_names || data.partner_name || null,
-            },
-          };
-          participant = {
-            full_name: data.full_name,
-            email: data.email,
-          };
-          break;
+          if (rows && rows.length > 0) {
+            const match = rows.find((r: any) => {
+              const codeId = getShortCode(r.id);
+              const codeToken = getShortCode(r.qr_token);
+              return codeId === cleanToken || codeToken === cleanToken;
+            });
+
+            if (match) {
+              eventReg = {
+                id: match.id,
+                qr_token: match.qr_token || match.id,
+                event_slug: item.slug,
+                checked_in_at: match.checked_in_at,
+                details: {
+                  teamName: match.team_name || null,
+                  teamLeaderName: match.team_leader_name || match.full_name,
+                  teamMembersNames: match.team_members_names || match.partner_name || null,
+                },
+              };
+              participant = {
+                full_name: match.full_name,
+                email: match.email,
+              };
+              break;
+            }
+          }
+        } else {
+          const { data } = await supabaseAdmin
+            .from(item.table)
+            .select("*")
+            .or(`qr_token.eq.${token},id.eq.${token}`)
+            .maybeSingle();
+
+          if (data) {
+            eventReg = {
+              id: data.id,
+              qr_token: data.qr_token || data.id,
+              event_slug: item.slug,
+              checked_in_at: data.checked_in_at,
+              details: {
+                teamName: data.team_name || null,
+                teamLeaderName: data.team_leader_name || data.full_name,
+                teamMembersNames: data.team_members_names || data.partner_name || null,
+              },
+            };
+            participant = {
+              full_name: data.full_name,
+              email: data.email,
+            };
+            break;
+          }
         }
       } catch (e) {
         // Fallback: try by id only
@@ -67,6 +109,7 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
           if (byId) {
             eventReg = {
               id: byId.id,
+              qr_token: byId.qr_token || byId.id,
               event_slug: item.slug,
               checked_in_at: byId.checked_in_at,
               details: {
@@ -91,12 +134,26 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
     if (!eventReg) {
       let regEvent: any = null;
       try {
-        const { data } = await supabaseAdmin
-          .from("registration_events")
-          .select("*")
-          .or(`qr_token.eq.${token},id.eq.${token}`)
-          .maybeSingle();
-        regEvent = data;
+        if (isShortCode) {
+          const { data: regEvents } = await supabaseAdmin
+            .from("registration_events")
+            .select("*");
+
+          if (regEvents && regEvents.length > 0) {
+            regEvent = regEvents.find((ev: any) => {
+              const codeId = getShortCode(ev.id);
+              const codeToken = getShortCode(ev.qr_token);
+              return codeId === cleanToken || codeToken === cleanToken;
+            });
+          }
+        } else {
+          const { data } = await supabaseAdmin
+            .from("registration_events")
+            .select("*")
+            .or(`qr_token.eq.${token},id.eq.${token}`)
+            .maybeSingle();
+          regEvent = data;
+        }
       } catch (e) {
         // ignore
       }
@@ -237,9 +294,18 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
                   </div>
                 )}
 
-                <div className="pt-2 border-t border-zinc-200/60 flex items-center justify-between text-[11px] font-mono text-zinc-400">
-                  <span>PASS ID</span>
-                  <span>{token.substring(0, 18)}...</span>
+                <div className="pt-2 border-t border-zinc-200/60 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-mono font-bold text-zinc-700 bg-white px-3 py-2 rounded-xl border border-zinc-200">
+                    <span className="text-zinc-500 uppercase text-[10px]">GATE PASS CODE</span>
+                    <span className="text-base font-black tracking-[0.25em] text-brand-violet">
+                      {getShortCode(eventReg.qr_token || eventReg.id || token)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                    <span>PASS ID</span>
+                    <span>{(eventReg.qr_token || eventReg.id || token).substring(0, 18)}...</span>
+                  </div>
                 </div>
               </div>
 

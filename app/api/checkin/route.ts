@@ -27,7 +27,7 @@ const EVENT_TABLE_MAP: Record<string, { table: string; name: string }> = {
   },
 };
 
-// Helper to extract clean UUID from a scanned string (raw token or URL)
+// Helper to extract clean UUID or code from a scanned string (raw token, code, or URL)
 function extractQrToken(rawInput: string): string {
   if (!rawInput) return "";
   const trimmed = rawInput.trim();
@@ -38,7 +38,19 @@ function extractQrToken(rawInput: string): string {
     return urlMatch[0];
   }
 
+  // If input contains /verify/<code_or_token>
+  const verifyPathMatch = trimmed.match(/\/verify\/([a-zA-Z0-9_-]+)\/?$/i);
+  if (verifyPathMatch) {
+    return verifyPathMatch[1];
+  }
+
   return trimmed;
+}
+
+// Deterministic 4-character code derived from the suffix of qr_token or id
+function getShortCode(val: string | null | undefined): string {
+  if (!val) return "";
+  return val.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase();
 }
 
 export async function POST(req: NextRequest) {
@@ -53,7 +65,7 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           code: "INVALID_QR",
-          error: "QR token is required",
+          error: "QR token or gate pass code is required",
         },
         { status: 400 }
       );
@@ -71,6 +83,8 @@ export async function POST(req: NextRequest) {
     }
 
     const qrToken = extractQrToken(rawToken);
+    const cleanToken = qrToken.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const isShortCode = cleanToken.length > 0 && cleanToken.length <= 4;
 
     if (!isSupabaseConfigured || !supabaseAdmin) {
       return NextResponse.json(
@@ -91,34 +105,58 @@ export async function POST(req: NextRequest) {
     // First, check the table matching the selected gate
     const gateTableInfo = EVENT_TABLE_MAP[gateEventSlug];
     if (gateTableInfo) {
-      try {
-        // Search by qr_token or by id in this gate's table
-        const { data } = await supabaseAdmin
-          .from(gateTableInfo.table)
-          .select("*")
-          .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
-          .maybeSingle();
-
-        if (data) {
-          foundRecord = data;
-          foundEventSlug = gateEventSlug;
-          foundTable = gateTableInfo.table;
-        }
-      } catch (e) {
-        // If qr_token column doesn't exist yet, query by id
+      if (isShortCode) {
         try {
-          const { data: byId } = await supabaseAdmin
+          const { data: rows } = await supabaseAdmin
+            .from(gateTableInfo.table)
+            .select("*");
+
+          if (rows && rows.length > 0) {
+            const matches = rows.filter((r: any) => {
+              const codeId = getShortCode(r.id);
+              const codeToken = getShortCode(r.qr_token);
+              return codeId === cleanToken || codeToken === cleanToken;
+            });
+
+            if (matches.length > 0) {
+              foundRecord = matches.find((r: any) => !r.checked_in_at) || matches[0];
+              foundEventSlug = gateEventSlug;
+              foundTable = gateTableInfo.table;
+            }
+          }
+        } catch (e) {
+          console.error(`Error in short code search for ${gateTableInfo.table}:`, e);
+        }
+      } else {
+        try {
+          // Search by qr_token or by id in this gate's table
+          const { data } = await supabaseAdmin
             .from(gateTableInfo.table)
             .select("*")
-            .eq("id", qrToken)
+            .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
             .maybeSingle();
-          if (byId) {
-            foundRecord = byId;
+
+          if (data) {
+            foundRecord = data;
             foundEventSlug = gateEventSlug;
             foundTable = gateTableInfo.table;
           }
-        } catch (e2) {
-          // ignore
+        } catch (e) {
+          // If qr_token column doesn't exist yet, query by id
+          try {
+            const { data: byId } = await supabaseAdmin
+              .from(gateTableInfo.table)
+              .select("*")
+              .eq("id", qrToken)
+              .maybeSingle();
+            if (byId) {
+              foundRecord = byId;
+              foundEventSlug = gateEventSlug;
+              foundTable = gateTableInfo.table;
+            }
+          } catch (e2) {
+            // ignore
+          }
         }
       }
     }
@@ -129,35 +167,60 @@ export async function POST(req: NextRequest) {
       for (const [slug, info] of Object.entries(EVENT_TABLE_MAP)) {
         if (slug === gateEventSlug) continue;
 
-        try {
-          const { data } = await supabaseAdmin
-            .from(info.table)
-            .select("*")
-            .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
-            .maybeSingle();
-
-          if (data) {
-            foundRecord = data;
-            foundEventSlug = slug;
-            foundTable = info.table;
-            break;
-          }
-        } catch (e) {
-          // Fallback to id query
+        if (isShortCode) {
           try {
-            const { data: byId } = await supabaseAdmin
+            const { data: rows } = await supabaseAdmin
+              .from(info.table)
+              .select("*");
+
+            if (rows && rows.length > 0) {
+              const matches = rows.filter((r: any) => {
+                const codeId = getShortCode(r.id);
+                const codeToken = getShortCode(r.qr_token);
+                return codeId === cleanToken || codeToken === cleanToken;
+              });
+
+              if (matches.length > 0) {
+                foundRecord = matches.find((r: any) => !r.checked_in_at) || matches[0];
+                foundEventSlug = slug;
+                foundTable = info.table;
+                break;
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+        } else {
+          try {
+            const { data } = await supabaseAdmin
               .from(info.table)
               .select("*")
-              .eq("id", qrToken)
+              .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
               .maybeSingle();
-            if (byId) {
-              foundRecord = byId;
+
+            if (data) {
+              foundRecord = data;
               foundEventSlug = slug;
               foundTable = info.table;
               break;
             }
-          } catch (e2) {
-            // ignore
+          } catch (e) {
+            // Fallback to id query
+            try {
+              const { data: byId } = await supabaseAdmin
+                .from(info.table)
+                .select("*")
+                .eq("id", qrToken)
+                .maybeSingle();
+              if (byId) {
+                foundRecord = byId;
+                foundEventSlug = slug;
+                foundTable = info.table;
+                break;
+              }
+            } catch (e2) {
+              // ignore
+            }
           }
         }
       }
@@ -166,11 +229,27 @@ export async function POST(req: NextRequest) {
     // 3. Fallback: Check registration_events table (unified schema)
     if (!foundRecord) {
       try {
-        const { data: eventReg } = await supabaseAdmin
-          .from("registration_events")
-          .select("id, registration_id, event_slug, details, checked_in_at, qr_token")
-          .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
-          .maybeSingle();
+        let eventReg: any = null;
+        if (isShortCode) {
+          const { data: regEvents } = await supabaseAdmin
+            .from("registration_events")
+            .select("id, registration_id, event_slug, details, checked_in_at, qr_token");
+
+          if (regEvents && regEvents.length > 0) {
+            eventReg = regEvents.find((ev: any) => {
+              const codeId = getShortCode(ev.id);
+              const codeToken = getShortCode(ev.qr_token);
+              return codeId === cleanToken || codeToken === cleanToken;
+            });
+          }
+        } else {
+          const { data } = await supabaseAdmin
+            .from("registration_events")
+            .select("id, registration_id, event_slug, details, checked_in_at, qr_token")
+            .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
+            .maybeSingle();
+          eventReg = data;
+        }
 
         if (eventReg) {
           foundEventSlug = eventReg.event_slug;
@@ -204,6 +283,7 @@ export async function POST(req: NextRequest) {
 
           foundRecord = {
             id: eventReg.id,
+            qr_token: eventReg.qr_token || eventReg.id,
             full_name: partName,
             email: partEmail,
             phone: partPhone,
@@ -249,6 +329,8 @@ export async function POST(req: NextRequest) {
       EVENTS_DATA.find((e) => e.slug === gateEventSlug)?.name ||
       gateEventSlug.toUpperCase().replace(/-/g, " ");
 
+    const matchedShortCode = getShortCode(foundRecord.qr_token || foundRecord.id);
+
     // CASE 2: Wrong Gate
     if (foundEventSlug !== gateEventSlug) {
       return NextResponse.json(
@@ -258,6 +340,7 @@ export async function POST(req: NextRequest) {
           error: `Wrong gate — this pass is for ${actualEventName}`,
           actualEvent: actualEventName,
           gateEvent: gateEventName,
+          shortCode: matchedShortCode,
           attendee: attendeeInfo,
         },
         { status: 400 }
@@ -288,6 +371,7 @@ export async function POST(req: NextRequest) {
           formattedTime,
           formattedDate,
           event: actualEventName,
+          shortCode: matchedShortCode,
           attendee: attendeeInfo,
         },
         { status: 409 }
@@ -325,7 +409,7 @@ export async function POST(req: NextRequest) {
           checked_in_at: checkinTimestamp,
           checked_in_by: volunteerEmail,
         })
-        .or(`qr_token.eq.${qrToken},id.eq.${foundRecord.id}`);
+        .or(`id.eq.${foundRecord.id}${foundRecord.qr_token ? `,qr_token.eq.${foundRecord.qr_token}` : ""}`);
     } catch (e) {
       // ignore
     }
@@ -337,6 +421,7 @@ export async function POST(req: NextRequest) {
       checkedInAt: checkinTimestamp,
       event: actualEventName,
       eventSlug: foundEventSlug,
+      shortCode: matchedShortCode,
       attendee: attendeeInfo,
     });
   } catch (error: any) {

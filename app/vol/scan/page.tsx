@@ -44,6 +44,7 @@ interface ScanResult {
   };
   event?: string;
   checkedInAt?: string;
+  shortCode?: string;
   timestamp: string;
 }
 
@@ -290,6 +291,7 @@ export default function VolunteerScanStationPage() {
             attendee: data.attendee,
             event: data.event,
             checkedInAt: data.checkedInAt,
+            shortCode: data.shortCode,
             timestamp: scanTime,
           };
         } else {
@@ -302,6 +304,7 @@ export default function VolunteerScanStationPage() {
               message: data.error || `This pass is for ${data.actualEvent}`,
               attendee: data.attendee,
               event: data.actualEvent,
+              shortCode: data.shortCode,
               timestamp: scanTime,
             };
           } else if (data.code === "ALREADY_CHECKED_IN") {
@@ -312,6 +315,7 @@ export default function VolunteerScanStationPage() {
               attendee: data.attendee,
               event: data.event,
               checkedInAt: data.checkedInAt,
+              shortCode: data.shortCode,
               timestamp: scanTime,
             };
           } else {
@@ -419,11 +423,24 @@ export default function VolunteerScanStationPage() {
     }
   };
 
+  const handleManualInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    // Strip non-alphanumerics and convert to uppercase
+    const clean = raw.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    // If user pasted a longer token/URL, take the last 4 characters
+    if (clean.length > 4) {
+      setManualTokenInput(clean.slice(-4));
+    } else {
+      setManualTokenInput(clean);
+    }
+  };
+
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualTokenInput.trim()) return;
+    const token = manualTokenInput.trim();
+    if (!token) return;
     if (isLockedRef.current || isProcessing) return;
-    submitCheckin(manualTokenInput.trim());
+    submitCheckin(token);
     setManualTokenInput("");
     setShowManualModal(false);
   };
@@ -574,9 +591,16 @@ export default function VolunteerScanStationPage() {
                   <span className="text-xs font-black uppercase tracking-widest text-zinc-400">
                     ATTENDEE
                   </span>
-                  <span className="text-xs font-mono font-bold text-zinc-500">
-                    {activeOverlay.timestamp}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {activeOverlay.shortCode && (
+                      <span className="text-xs font-mono font-black text-brand-violet bg-brand-surface px-2.5 py-0.5 rounded-lg border border-zinc-200">
+                        CODE: {activeOverlay.shortCode}
+                      </span>
+                    )}
+                    <span className="text-xs font-mono font-bold text-zinc-500">
+                      {activeOverlay.timestamp}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="text-2xl sm:text-3xl font-display font-black uppercase text-brand-ink leading-tight">
@@ -883,9 +907,16 @@ export default function VolunteerScanStationPage() {
                         </div>
                       </div>
 
-                      <span className="text-[10px] font-mono text-zinc-400 flex-shrink-0">
-                        {scan.timestamp}
-                      </span>
+                      <div className="flex flex-col items-end flex-shrink-0">
+                        <span className="text-[10px] font-mono text-zinc-400">
+                          {scan.timestamp}
+                        </span>
+                        {scan.shortCode && (
+                          <span className="text-[9px] font-mono font-black text-brand-lime mt-0.5">
+                            #{scan.shortCode}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -904,13 +935,13 @@ export default function VolunteerScanStationPage() {
         </div>
       </main>
 
-      {/* Manual Token Entry Modal */}
+      {/* Manual 4-Character Code Entry Modal */}
       {showManualModal && (
         <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-zinc-900 rounded-3xl border-2 border-zinc-700 p-6 text-white shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-widest text-brand-lime">
-                MANUAL VERIFICATION
+                MANUAL GATE CHECK-IN
               </span>
               <button
                 onClick={() => setShowManualModal(false)}
@@ -920,38 +951,64 @@ export default function VolunteerScanStationPage() {
               </button>
             </div>
 
-            <h3 className="font-display text-2xl font-black uppercase">
-              ENTER QR PASS TOKEN
-            </h3>
+            <div className="space-y-1">
+              <h3 className="font-display text-2xl font-black uppercase">
+                ENTER 4-CHAR PASS CODE
+              </h3>
+              <p className="text-xs text-zinc-400">
+                Type the 4-character code shown on the attendee's ticket below the QR code:
+              </p>
+            </div>
 
-            <p className="text-xs text-zinc-400">
-              Paste or type the pass UUID token or verification URL shown on the attendee's phone:
-            </p>
+            {/* Active Gate Indicator */}
+            <div className="bg-black/60 rounded-xl p-2.5 border border-zinc-800 flex items-center justify-between text-xs">
+              <span className="text-zinc-500 font-bold uppercase text-[10px]">CURRENT GATE:</span>
+              <span className="font-black text-white uppercase text-[11px] flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentGateInfo.color }} />
+                <span>{currentGateInfo.name}</span>
+                <span className="text-zinc-500 font-normal">({currentGateInfo.venue})</span>
+              </span>
+            </div>
 
             <form onSubmit={handleManualSubmit} className="space-y-4">
-              <input
-                type="text"
-                required
-                placeholder="e.g. c1dd0e7b-2f63-405a-8b41-42af536107cd"
-                value={manualTokenInput}
-                onChange={(e) => setManualTokenInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-black border-2 border-zinc-700 focus:border-brand-lime text-white text-xs font-mono focus:outline-none"
-              />
+              <div className="space-y-1.5">
+                <input
+                  type="text"
+                  autoFocus
+                  maxLength={4}
+                  required
+                  placeholder="07CD"
+                  value={manualTokenInput}
+                  onChange={handleManualInputChange}
+                  className="w-full text-center py-4 px-3 rounded-2xl bg-black border-2 border-zinc-700 focus:border-brand-lime text-brand-lime text-3xl sm:text-4xl font-mono font-black tracking-[0.35em] uppercase placeholder:text-zinc-800 placeholder:tracking-[0.35em] focus:outline-none transition-colors"
+                />
 
-              <div className="flex gap-3">
+                <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 px-1">
+                  <span>Fast gate code</span>
+                  <span className={manualTokenInput.length === 4 ? "text-brand-lime font-bold" : "text-zinc-500"}>
+                    {manualTokenInput.length} / 4 characters
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-zinc-500 leading-relaxed">
+                Tip: If you paste a full ticket URL or UUID, the 4-character code will be extracted automatically.
+              </p>
+
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setShowManualModal(false)}
-                  className="flex-1 py-3 rounded-xl border border-zinc-700 text-xs font-bold uppercase hover:bg-zinc-800"
+                  className="flex-1 py-3 rounded-xl border border-zinc-700 text-xs font-bold uppercase hover:bg-zinc-800 transition-colors"
                 >
                   CANCEL
                 </button>
                 <button
                   type="submit"
                   disabled={!manualTokenInput.trim() || isProcessing}
-                  className="flex-1 py-3 rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-black font-black text-xs uppercase tracking-wider disabled:opacity-50"
+                  className="flex-1 py-3 rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-black font-black text-xs uppercase tracking-wider disabled:opacity-40 transition-all shadow-md active:scale-98"
                 >
-                  VERIFY PASS
+                  VERIFY PASS CODE
                 </button>
               </div>
             </form>

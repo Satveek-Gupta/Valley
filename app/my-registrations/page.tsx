@@ -41,6 +41,7 @@ interface ParticipantRegistration {
   isBayArea: boolean;
   qrToken?: string;
   qrUrl?: string;
+  shortCode?: string;
   checkedInAt?: string | null;
   teamName?: string | null;
   teamLeaderName?: string | null;
@@ -501,9 +502,22 @@ function MyRegistrationsContent() {
                           />
                         </div>
 
+                        {/* 4-Character Gate Pass Code Box */}
+                        <div className="mt-3 w-full bg-white/10 rounded-xl p-2.5 border border-white/15 text-center">
+                          <div className="text-[9px] font-mono font-bold tracking-widest text-zinc-300 uppercase mb-0.5">
+                            GATE PASS CODE
+                          </div>
+                          <div className="font-mono text-2xl font-black tracking-[0.25em] text-brand-lime selection:bg-brand-lime selection:text-black">
+                            {reg.shortCode || (reg.qrToken || reg.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}
+                          </div>
+                          <div className="text-[9px] text-zinc-400 font-medium mt-0.5">
+                            Show this 4-char code for fast manual gate check-in
+                          </div>
+                        </div>
+
                         <div className="mt-3 w-full">
                           <div className="text-[10px] font-mono text-zinc-400 truncate mb-2">
-                            TOKEN: <span className="text-white font-bold">{(reg.qrToken || reg.id).substring(0, 16)}...</span>
+                            PASS ID: <span className="text-white font-bold">{(reg.qrToken || reg.id).substring(0, 16)}...</span>
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">
