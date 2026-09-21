@@ -75,7 +75,7 @@ export default function TimelineBento() {
                     STARTUP ROULETTE (3 RDS)
                   </div>
                   <div className="text-xs font-bold text-white mt-0.5">6:30 PM Onwards</div>
-                  {/* <div className="text-[11px] text-white/70">Main Auditorium · 12 Teams</div> */}
+                  <div className="text-[11px] text-white/70">Hexagon · 12 Teams Max</div>
                 </div>
               </div>
             </div>
@@ -116,12 +116,12 @@ export default function TimelineBento() {
               <div className="space-y-2 text-xs font-bold text-brand-ink mb-6">
                 <div className="flex items-center gap-2">
                   <Clock className="w-3.5 h-3.5 text-brand-violet" />
-                  <span>11:00 AM – 3:30 PM</span>
+                  <span>6:30 PM Onwards</span>
                 </div>
-                {/* <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <MapPin className="w-3.5 h-3.5 text-brand-violet" />
-                  <span>Strategy Arena - Hall B</span>
-                </div> */}
+                  <span>301 ALH</span>
+                </div>
               </div>
             </div>
 
@@ -152,9 +152,20 @@ export default function TimelineBento() {
                 THE BOARDROOM
               </h3>
 
-              <p className="text-xs text-zinc-600 font-medium mb-4">
+              <p className="text-xs text-zinc-600 font-medium mb-3">
                 Duo executive crisis resolution. 90-minute case crack followed by turnaround presentation.
               </p>
+
+              <div className="space-y-1.5 text-xs font-bold text-brand-ink mb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-brand-violet" />
+                  <span>6:30 PM Onwards</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-brand-violet" />
+                  <span>Hexagon</span>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-end justify-between pt-4 border-t border-zinc-200">
@@ -182,9 +193,20 @@ export default function TimelineBento() {
                 ENTREPRE-NORMIE
               </h3>
 
-              <p className="text-xs text-zinc-600 font-medium mb-4">
+              <p className="text-xs text-zinc-600 font-medium mb-3">
                 Direct closed-door founder dialogues. Career mentorship, idea tearing, and venture guidance.
               </p>
+
+              <div className="space-y-1.5 text-xs font-bold text-brand-ink mb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-brand-violet" />
+                  <span>6:30 PM Onwards</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-brand-violet" />
+                  <span>002 ALH</span>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-end justify-between pt-4 border-t border-zinc-200">
@@ -212,9 +234,20 @@ export default function TimelineBento() {
                 Bulls & Bears
               </h3>
 
-              <p className="text-xs text-zinc-300 font-medium mb-4">
+              <p className="text-xs text-zinc-300 font-medium mb-3">
                 Bulls & Bears trading climax, followed by the Grand Rewarding Ceremony & Internship reveals.
               </p>
+
+              <div className="space-y-1.5 text-xs font-bold text-white mb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-brand-lime" />
+                  <span>6:30 PM Onwards</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-brand-lime" />
+                  <span>301 ALH</span>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-end justify-between pt-4 border-t border-white/20">

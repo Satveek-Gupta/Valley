@@ -32,6 +32,9 @@ export interface EventRegistration {
   ideaDescription?: string;
   partnerName?: string;
   founderDiscussionTopic?: string;
+  checkedInAt?: string | null;
+  checkedInBy?: string | null;
+  qrToken?: string | null;
 }
 
 export default function RegistrationsTable({
@@ -137,6 +140,8 @@ export default function RegistrationsTable({
         "Idea Name",
         "Pitch Description",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
@@ -150,6 +155,8 @@ export default function RegistrationsTable({
         `"${r.ideaName || ""}"`,
         `"${(r.ideaDescription || "").replace(/"/g, '""')}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else if (activeEventTab === "the-war-room") {
@@ -162,6 +169,8 @@ export default function RegistrationsTable({
         "Chief Negotiator (Leader)",
         "5-Member Roster",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
@@ -173,6 +182,8 @@ export default function RegistrationsTable({
         `"${r.teamLeaderName || ""}"`,
         `"${r.teamMembersNames || ""}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else if (activeEventTab === "the-boardroom") {
@@ -185,6 +196,8 @@ export default function RegistrationsTable({
         "Lead Partner",
         "Duo Partner",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
@@ -196,6 +209,8 @@ export default function RegistrationsTable({
         `"${r.teamLeaderName || ""}"`,
         `"${r.partnerName || r.teamMembersNames || ""}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else if (activeEventTab === "entre-prenormie") {
@@ -206,6 +221,8 @@ export default function RegistrationsTable({
         "Phone",
         "Founder Discussion Topic",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
@@ -215,6 +232,8 @@ export default function RegistrationsTable({
         `"${r.phone || ""}"`,
         `"${(r.founderDiscussionTopic || "").replace(/"/g, '""')}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else if (activeEventTab === "bulls-and-bears") {
@@ -224,6 +243,8 @@ export default function RegistrationsTable({
         "Email",
         "Phone",
         "Registered At",
+        "Gate Check-In",
+        "Verified By",
         "Status",
       ];
       rows = filteredRegistrations.map((r) => [
@@ -232,10 +253,12 @@ export default function RegistrationsTable({
         `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     } else {
-      headers = ["Pass ID", "Full Name", "Email", "Phone", "Event", "Registered At", "Status"];
+      headers = ["Pass ID", "Full Name", "Email", "Phone", "Event", "Registered At", "Gate Check-In", "Verified By", "Status"];
       rows = filteredRegistrations.map((r) => [
         r.id,
         `"${r.fullName || ""}"`,
@@ -243,6 +266,8 @@ export default function RegistrationsTable({
         `"${r.phone || ""}"`,
         r.eventSlug,
         `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.checkedInAt ? "CHECKED IN (" + new Date(r.checkedInAt).toLocaleString() + ")" : "PENDING"}"`,
+        `"${r.checkedInBy || ""}"`,
         r.status,
       ]);
     }
@@ -438,6 +463,7 @@ export default function RegistrationsTable({
                 )}
 
                 <th className="py-3.5 px-4">Submitted</th>
+                <th className="py-3.5 px-4">Gate Pass</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -520,6 +546,31 @@ export default function RegistrationsTable({
                     <td className="py-3.5 px-4 text-zinc-500 font-mono text-[11px]">
                       {new Date(reg.createdAt).toLocaleDateString()}
                     </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {reg.checkedInAt ? (
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase border border-emerald-300">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>CHECKED IN</span>
+                          </span>
+                          <div className="text-[10px] font-mono text-zinc-500">
+                            {new Date(reg.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                          {reg.checkedInBy && (
+                            <div
+                              className="text-[10px] font-mono text-zinc-600 truncate max-w-[150px] font-semibold"
+                              title={`Verified by: ${reg.checkedInBy}`}
+                            >
+                              by: <span className="text-zinc-800 underline decoration-zinc-300">{reg.checkedInBy}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-[10px] font-bold uppercase border border-zinc-200">
+                          <span>PENDING</span>
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3.5 px-4">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">
                         <CheckCircle2 className="w-3 h-3" />
@@ -593,6 +644,29 @@ export default function RegistrationsTable({
                 <span className="font-bold text-zinc-500">STATUS:</span>
                 <span className="font-bold text-emerald-700 uppercase">{selectedRecord.status}</span>
               </div>
+              <div className="flex justify-between items-start">
+                <span className="font-bold text-zinc-500">GATE CHECK-IN:</span>
+                {selectedRecord.checkedInAt ? (
+                  <div className="text-right">
+                    <span className="font-black text-emerald-700 uppercase block">
+                      CHECKED IN AT {new Date(selectedRecord.checkedInAt).toLocaleTimeString()} ({new Date(selectedRecord.checkedInAt).toLocaleDateString()})
+                    </span>
+                    {selectedRecord.checkedInBy && (
+                      <span className="text-[11px] font-mono text-zinc-600 block mt-1">
+                        Verified by: <strong className="text-brand-ink font-bold bg-zinc-200/80 px-2 py-0.5 rounded border border-zinc-300">{selectedRecord.checkedInBy}</strong>
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="font-bold text-zinc-400 uppercase">NOT CHECKED IN YET</span>
+                )}
+              </div>
+              {selectedRecord.qrToken && (
+                <div className="flex justify-between items-center pt-1 border-t border-zinc-200">
+                  <span className="font-bold text-zinc-500">QR TOKEN:</span>
+                  <span className="font-mono text-zinc-600 text-[10px]">{selectedRecord.qrToken}</span>
+                </div>
+              )}
             </div>
 
             {/* Event Specific Sub-card in Modal */}

@@ -1,8 +1,11 @@
--- Cabinet Valley Database Schema (Supabase / Postgres)
--- Run this in your Supabase SQL editor to create all event-specific tables, indexes, and RLS policies.
+-- ==============================================================================
+-- CABINET VALLEY 2026 — COMPLETE POSTGRES / SUPABASE DATABASE SCHEMA
+-- Run this entire script in your Supabase SQL Editor (Dashboard -> SQL Editor -> New query)
+-- It is safe to run multiple times (idempotent with IF NOT EXISTS / ON CONFLICT).
+-- ==============================================================================
 
 -- ==============================================================================
--- 1. SEPARATE EVENT REGISTRATION TABLES
+-- 1. PRIMARY EVENT REGISTRATION TABLES (THE 5 GATED TRACKS)
 -- ==============================================================================
 
 -- 1.1 Startup Roulette Registrations
@@ -17,12 +20,19 @@ CREATE TABLE IF NOT EXISTS public.registrations_startup_roulette (
     idea_name TEXT,
     idea_description TEXT,
     status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+    qr_token UUID UNIQUE DEFAULT gen_random_uuid(),
+    checked_in_at TIMESTAMPTZ DEFAULT NULL,
+    checked_in_by TEXT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ensure nullable columns if table was created previously with NOT NULL
+-- Ensure columns exist if table was previously created without them
 ALTER TABLE public.registrations_startup_roulette ALTER COLUMN idea_name DROP NOT NULL;
 ALTER TABLE public.registrations_startup_roulette ALTER COLUMN idea_description DROP NOT NULL;
+ALTER TABLE public.registrations_startup_roulette ADD COLUMN IF NOT EXISTS qr_token UUID UNIQUE DEFAULT gen_random_uuid();
+ALTER TABLE public.registrations_startup_roulette ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.registrations_startup_roulette ADD COLUMN IF NOT EXISTS checked_in_by TEXT DEFAULT NULL;
+UPDATE public.registrations_startup_roulette SET qr_token = gen_random_uuid() WHERE qr_token IS NULL;
 
 -- 1.2 The War Room Registrations
 CREATE TABLE IF NOT EXISTS public.registrations_the_war_room (
@@ -34,8 +44,16 @@ CREATE TABLE IF NOT EXISTS public.registrations_the_war_room (
     team_leader_name TEXT NOT NULL,
     team_members_names TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+    qr_token UUID UNIQUE DEFAULT gen_random_uuid(),
+    checked_in_at TIMESTAMPTZ DEFAULT NULL,
+    checked_in_by TEXT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.registrations_the_war_room ADD COLUMN IF NOT EXISTS qr_token UUID UNIQUE DEFAULT gen_random_uuid();
+ALTER TABLE public.registrations_the_war_room ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.registrations_the_war_room ADD COLUMN IF NOT EXISTS checked_in_by TEXT DEFAULT NULL;
+UPDATE public.registrations_the_war_room SET qr_token = gen_random_uuid() WHERE qr_token IS NULL;
 
 -- 1.3 The Boardroom Registrations
 CREATE TABLE IF NOT EXISTS public.registrations_the_boardroom (
@@ -47,8 +65,16 @@ CREATE TABLE IF NOT EXISTS public.registrations_the_boardroom (
     team_leader_name TEXT NOT NULL,
     partner_name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+    qr_token UUID UNIQUE DEFAULT gen_random_uuid(),
+    checked_in_at TIMESTAMPTZ DEFAULT NULL,
+    checked_in_by TEXT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.registrations_the_boardroom ADD COLUMN IF NOT EXISTS qr_token UUID UNIQUE DEFAULT gen_random_uuid();
+ALTER TABLE public.registrations_the_boardroom ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.registrations_the_boardroom ADD COLUMN IF NOT EXISTS checked_in_by TEXT DEFAULT NULL;
+UPDATE public.registrations_the_boardroom SET qr_token = gen_random_uuid() WHERE qr_token IS NULL;
 
 -- 1.4 Entre-Prenormie Registrations
 CREATE TABLE IF NOT EXISTS public.registrations_entre_prenormie (
@@ -58,8 +84,16 @@ CREATE TABLE IF NOT EXISTS public.registrations_entre_prenormie (
     phone TEXT NOT NULL,
     founder_discussion_topic TEXT,
     status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+    qr_token UUID UNIQUE DEFAULT gen_random_uuid(),
+    checked_in_at TIMESTAMPTZ DEFAULT NULL,
+    checked_in_by TEXT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.registrations_entre_prenormie ADD COLUMN IF NOT EXISTS qr_token UUID UNIQUE DEFAULT gen_random_uuid();
+ALTER TABLE public.registrations_entre_prenormie ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.registrations_entre_prenormie ADD COLUMN IF NOT EXISTS checked_in_by TEXT DEFAULT NULL;
+UPDATE public.registrations_entre_prenormie SET qr_token = gen_random_uuid() WHERE qr_token IS NULL;
 
 -- 1.5 Bulls & Bears Registrations
 CREATE TABLE IF NOT EXISTS public.registrations_bulls_and_bears (
@@ -68,8 +102,32 @@ CREATE TABLE IF NOT EXISTS public.registrations_bulls_and_bears (
     email TEXT NOT NULL,
     phone TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+    qr_token UUID UNIQUE DEFAULT gen_random_uuid(),
+    checked_in_at TIMESTAMPTZ DEFAULT NULL,
+    checked_in_by TEXT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.registrations_bulls_and_bears ADD COLUMN IF NOT EXISTS qr_token UUID UNIQUE DEFAULT gen_random_uuid();
+ALTER TABLE public.registrations_bulls_and_bears ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.registrations_bulls_and_bears ADD COLUMN IF NOT EXISTS checked_in_by TEXT DEFAULT NULL;
+UPDATE public.registrations_bulls_and_bears SET qr_token = gen_random_uuid() WHERE qr_token IS NULL;
+
+-- Fast index lookups for gates and email searches
+CREATE INDEX IF NOT EXISTS idx_roulette_qr_token ON public.registrations_startup_roulette(qr_token);
+CREATE INDEX IF NOT EXISTS idx_roulette_email ON public.registrations_startup_roulette(email);
+
+CREATE INDEX IF NOT EXISTS idx_warroom_qr_token ON public.registrations_the_war_room(qr_token);
+CREATE INDEX IF NOT EXISTS idx_warroom_email ON public.registrations_the_war_room(email);
+
+CREATE INDEX IF NOT EXISTS idx_boardroom_qr_token ON public.registrations_the_boardroom(qr_token);
+CREATE INDEX IF NOT EXISTS idx_boardroom_email ON public.registrations_the_boardroom(email);
+
+CREATE INDEX IF NOT EXISTS idx_entre_qr_token ON public.registrations_entre_prenormie(qr_token);
+CREATE INDEX IF NOT EXISTS idx_entre_email ON public.registrations_entre_prenormie(email);
+
+CREATE INDEX IF NOT EXISTS idx_bulls_qr_token ON public.registrations_bulls_and_bears(qr_token);
+CREATE INDEX IF NOT EXISTS idx_bulls_email ON public.registrations_bulls_and_bears(email);
 
 -- ==============================================================================
 -- 2. DYNAMIC EVENTS & TRACKS CATALOG
@@ -98,7 +156,6 @@ CREATE TABLE IF NOT EXISTS public.events (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ensure newly added columns exist if table was previously created
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS date_label TEXT;
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS tag_type TEXT DEFAULT 'violet';
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS icon_name TEXT DEFAULT 'Sparkles';
@@ -124,6 +181,9 @@ CREATE TABLE IF NOT EXISTS public.stalls (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ==============================================================================
+-- 4. SPONSORS & LEADERBOARD
+-- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.sponsors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -136,15 +196,12 @@ CREATE TABLE IF NOT EXISTS public.sponsors (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Add any missing columns to existing sponsors table
 ALTER TABLE public.sponsors ADD COLUMN IF NOT EXISTS tier TEXT DEFAULT 'Partner';
 ALTER TABLE public.sponsors ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Ecosystem';
 ALTER TABLE public.sponsors ADD COLUMN IF NOT EXISTS website_url TEXT;
 ALTER TABLE public.sponsors ADD COLUMN IF NOT EXISTS logo_url TEXT;
 ALTER TABLE public.sponsors ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0;
 ALTER TABLE public.sponsors ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
-
--- Drop constraints from older schema versions
 ALTER TABLE public.sponsors ALTER COLUMN logo_url DROP NOT NULL;
 ALTER TABLE public.sponsors DROP CONSTRAINT IF EXISTS sponsors_tier_check;
 
@@ -160,7 +217,67 @@ CREATE TABLE IF NOT EXISTS public.leaderboard (
 );
 
 -- ==============================================================================
--- 5. SEED INITIAL EVENTS
+-- 5. ADMINS & VOLUNTEERS AUTH ROLES
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.admins (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'volunteer', 'superadmin')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+DO $$
+BEGIN
+    ALTER TABLE public.admins DROP CONSTRAINT IF EXISTS admins_role_check;
+    ALTER TABLE public.admins ADD CONSTRAINT admins_role_check CHECK (role IN ('admin', 'volunteer', 'superadmin'));
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
+
+-- ==============================================================================
+-- 6. UNIFIED RELATIONAL SCHEMA (OPTIONAL BACKWARD COMPATIBILITY)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.participants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    full_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.registrations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    participant_id UUID REFERENCES public.participants(id) ON DELETE CASCADE,
+    confirmed_rules BOOLEAN NOT NULL DEFAULT true,
+    status TEXT NOT NULL DEFAULT 'confirmed',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.registration_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    registration_id UUID REFERENCES public.registrations(id) ON DELETE CASCADE,
+    event_slug TEXT NOT NULL,
+    details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    qr_token UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    checked_in_at TIMESTAMPTZ DEFAULT NULL,
+    checked_in_by UUID REFERENCES public.admins(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.registration_events
+    ADD COLUMN IF NOT EXISTS qr_token UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS checked_in_by UUID REFERENCES public.admins(id);
+
+CREATE INDEX IF NOT EXISTS idx_registration_events_qr_token ON public.registration_events(qr_token);
+CREATE INDEX IF NOT EXISTS idx_registration_events_event_slug ON public.registration_events(event_slug);
+CREATE INDEX IF NOT EXISTS idx_participants_email ON public.participants(email);
+CREATE INDEX IF NOT EXISTS idx_registrations_participant_id ON public.registrations(participant_id);
+CREATE INDEX IF NOT EXISTS idx_registration_events_registration_id ON public.registration_events(registration_id);
+
+-- ==============================================================================
+-- 7. SEED DATA (EVENTS, STALLS, SPONSORS)
 -- ==============================================================================
 INSERT INTO public.events (
     slug, name, day, date_label, tagline, description, team_size, format,
@@ -177,8 +294,8 @@ VALUES
     'Pitch your own startup, swap decks with a rival in Round 2, and defend a notorious bankrupt startup in Sell the Scam.',
     '3–5 Members (12 Teams Max)',
     '3 Elimination Rounds',
-    'Main Auditorium',
-    '11:00 AM – 4:00 PM',
+    'Hexagon',
+    '6:30pm onwards',
     '#FF5A36',
     'orange',
     'Sparkles',
@@ -228,8 +345,8 @@ VALUES
     'Teams receive points to bid on mystery assets, then immediately construct and present a market strategy under pressure.',
     '3–5 Members',
     '2 Rounds',
-    'Strategy Arena - Hall B',
-    '11:00 AM – 3:30 PM',
+    '301 ALH',
+    '6:30pm onwards',
     '#2F6FED',
     'blue',
     'Swords',
@@ -254,8 +371,8 @@ VALUES
     'Duos receive an intense real-world corporate dilemma and must present their diagnostic framework to industry veterans.',
     '2 Members (Duos)',
     'Case Resolution',
-    'Executive Conference Suite',
-    '2:00 PM – 5:30 PM',
+    'Hexagon',
+    '6:30pm onwards',
     '#FF5A36',
     'orange',
     'Briefcase',
@@ -272,15 +389,15 @@ VALUES
 ),
 (
     'entre-prenormie',
-    'ENTRE-PRENORMIE',
+    'ENTREPRE-NORMIE',
     3,
     'DAY 03',
     'Intimate 1-on-1 Founder Dialogues',
     'Exclusive closed-room 1-on-1 mentorship sessions between students and top tech founders.',
     'Individual (1-on-1)',
     'Direct Mentorship',
-    'Mentor Lounge - Block 4',
-    '10:00 AM – 1:00 PM',
+    '002 ALH',
+    '6:30pm onwards',
     '#7C3AED',
     'violet',
     'Users',
@@ -303,8 +420,8 @@ VALUES
     'Fast-paced individual financial quiz and trading simulation with dynamic leaderboard.',
     'Individual Only',
     'Speed Quiz & Trading',
-    'Terminal Lab 1',
-    '1:30 PM – 3:30 PM',
+    '301 ALH',
+    '6:30pm onwards',
     '#C6F135',
     'lime',
     'TrendingUp',
@@ -348,8 +465,20 @@ SELECT
 FROM generate_series(1, 55) AS n
 ON CONFLICT (stall_number) DO NOTHING;
 
+-- Seed Default Sponsors
+INSERT INTO public.sponsors (name, tier, category, sort_order)
+VALUES
+    ('Apex Ventures', 'Title Partner', 'Venture Capital', 1),
+    ('Nexus Cloud', 'Infrastructure Partner', 'Cloud & AI', 2),
+    ('Zephyr FinTech', 'Track Partner', 'Trading & Banking', 3),
+    ('Pulse Beverage', 'Hydration Partner', 'F&B', 4),
+    ('Krypton Labs', 'Ecosystem Partner', 'Web3 & Security', 5),
+    ('Founders Guild', 'Incubation Partner', 'Accelerators', 6),
+    ('Vanguard Media', 'Broadcast Partner', 'Media', 7)
+ON CONFLICT DO NOTHING;
+
 -- ==============================================================================
--- 6. ROW LEVEL SECURITY (RLS) POLICIES
+-- 8. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
 
 -- Enable RLS on all tables
@@ -357,13 +486,17 @@ ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.stalls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sponsors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leaderboard ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registrations_startup_roulette ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registrations_the_war_room ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registrations_the_boardroom ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registrations_entre_prenormie ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registrations_bulls_and_bears ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registration_events ENABLE ROW LEVEL SECURITY;
 
--- 6.1 Public Read (SELECT) Policies
+-- 8.1 Public Read (SELECT) Policies
 DROP POLICY IF EXISTS "Public read events" ON public.events;
 CREATE POLICY "Public read events" ON public.events FOR SELECT USING (true);
 
@@ -375,6 +508,9 @@ CREATE POLICY "Public read sponsors" ON public.sponsors FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public read leaderboard" ON public.leaderboard;
 CREATE POLICY "Public read leaderboard" ON public.leaderboard FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public read admins" ON public.admins;
+CREATE POLICY "Public read admins" ON public.admins FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public read registrations_startup_roulette" ON public.registrations_startup_roulette;
 CREATE POLICY "Public read registrations_startup_roulette" ON public.registrations_startup_roulette FOR SELECT USING (true);
@@ -391,7 +527,16 @@ CREATE POLICY "Public read registrations_entre_prenormie" ON public.registration
 DROP POLICY IF EXISTS "Public read registrations_bulls_and_bears" ON public.registrations_bulls_and_bears;
 CREATE POLICY "Public read registrations_bulls_and_bears" ON public.registrations_bulls_and_bears FOR SELECT USING (true);
 
--- 6.2 Public Insert (INSERT) Policies
+DROP POLICY IF EXISTS "Public read participants" ON public.participants;
+CREATE POLICY "Public read participants" ON public.participants FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public read registrations" ON public.registrations;
+CREATE POLICY "Public read registrations" ON public.registrations FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public read registration_events" ON public.registration_events;
+CREATE POLICY "Public read registration_events" ON public.registration_events FOR SELECT USING (true);
+
+-- 8.2 Public Insert (INSERT) Policies
 DROP POLICY IF EXISTS "Public insert events" ON public.events;
 CREATE POLICY "Public insert events" ON public.events FOR INSERT WITH CHECK (true);
 
@@ -413,7 +558,16 @@ CREATE POLICY "Public insert registrations_entre_prenormie" ON public.registrati
 DROP POLICY IF EXISTS "Public insert registrations_bulls_and_bears" ON public.registrations_bulls_and_bears;
 CREATE POLICY "Public insert registrations_bulls_and_bears" ON public.registrations_bulls_and_bears FOR INSERT WITH CHECK (true);
 
--- 6.3 Update (UPDATE) Policies
+DROP POLICY IF EXISTS "Public insert participants" ON public.participants;
+CREATE POLICY "Public insert participants" ON public.participants FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public insert registrations" ON public.registrations;
+CREATE POLICY "Public insert registrations" ON public.registrations FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public insert registration_events" ON public.registration_events;
+CREATE POLICY "Public insert registration_events" ON public.registration_events FOR INSERT WITH CHECK (true);
+
+-- 8.3 Update (UPDATE) Policies (Includes Gate Check-in for QR scans)
 DROP POLICY IF EXISTS "Public update events" ON public.events;
 CREATE POLICY "Public update events" ON public.events FOR UPDATE USING (true);
 
@@ -423,7 +577,25 @@ CREATE POLICY "Public update sponsors" ON public.sponsors FOR UPDATE USING (true
 DROP POLICY IF EXISTS "Public update stalls" ON public.stalls;
 CREATE POLICY "Public update stalls" ON public.stalls FOR UPDATE USING (true);
 
--- 6.4 Admin / Public Delete (DELETE) Policies
+DROP POLICY IF EXISTS "Public update registrations_startup_roulette" ON public.registrations_startup_roulette;
+CREATE POLICY "Public update registrations_startup_roulette" ON public.registrations_startup_roulette FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public update registrations_the_war_room" ON public.registrations_the_war_room;
+CREATE POLICY "Public update registrations_the_war_room" ON public.registrations_the_war_room FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public update registrations_the_boardroom" ON public.registrations_the_boardroom;
+CREATE POLICY "Public update registrations_the_boardroom" ON public.registrations_the_boardroom FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public update registrations_entre_prenormie" ON public.registrations_entre_prenormie;
+CREATE POLICY "Public update registrations_entre_prenormie" ON public.registrations_entre_prenormie FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public update registrations_bulls_and_bears" ON public.registrations_bulls_and_bears;
+CREATE POLICY "Public update registrations_bulls_and_bears" ON public.registrations_bulls_and_bears FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public update registration_events" ON public.registration_events;
+CREATE POLICY "Public update registration_events" ON public.registration_events FOR UPDATE USING (true);
+
+-- 8.4 Delete (DELETE) Policies
 DROP POLICY IF EXISTS "Public delete events" ON public.events;
 CREATE POLICY "Public delete events" ON public.events FOR DELETE USING (true);
 
@@ -444,17 +616,3 @@ CREATE POLICY "Public delete registrations_entre_prenormie" ON public.registrati
 
 DROP POLICY IF EXISTS "Public delete registrations_bulls_and_bears" ON public.registrations_bulls_and_bears;
 CREATE POLICY "Public delete registrations_bulls_and_bears" ON public.registrations_bulls_and_bears FOR DELETE USING (true);
-
--- ==============================================================================
--- 7. SEED DEFAULT SPONSORS
--- ==============================================================================
-INSERT INTO public.sponsors (name, tier, category, sort_order)
-VALUES
-    ('Apex Ventures', 'Title Partner', 'Venture Capital', 1),
-    ('Nexus Cloud', 'Infrastructure Partner', 'Cloud & AI', 2),
-    ('Zephyr FinTech', 'Track Partner', 'Trading & Banking', 3),
-    ('Pulse Beverage', 'Hydration Partner', 'F&B', 4),
-    ('Krypton Labs', 'Ecosystem Partner', 'Web3 & Security', 5),
-    ('Founders Guild', 'Incubation Partner', 'Accelerators', 6),
-    ('Vanguard Media', 'Broadcast Partner', 'Media', 7)
-ON CONFLICT DO NOTHING;

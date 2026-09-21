@@ -67,10 +67,12 @@ export default function CountdownWidget({
   theme = "violet",
   compact = false,
 }: CountdownWidgetProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const [activeTarget, setActiveTarget] = useState(targetDate);
   const [timeLeft, setTimeLeft] = useState<TimeLeftState>(() => calculateTimeLeft(targetDate));
 
   useEffect(() => {
+    setIsMounted(true);
     // Check if custom target set in localStorage by admin
     try {
       const stored = localStorage.getItem("cv_countdown_target");
@@ -115,13 +117,15 @@ export default function CountdownWidget({
         suppressHydrationWarning
         className="inline-flex items-center gap-1.5 font-mono text-xs font-bold tracking-normal bg-black/40 text-white px-3 py-1.5 rounded-full border border-white/10"
       >
-        <span>{timeLeft.days}</span>
+        <span suppressHydrationWarning>{isMounted ? timeLeft.days : "--"}</span>
         <span className="text-white/40">:</span>
-        <span>{timeLeft.hours}</span>
+        <span suppressHydrationWarning>{isMounted ? timeLeft.hours : "--"}</span>
         <span className="text-white/40">:</span>
-        <span>{timeLeft.minutes}</span>
+        <span suppressHydrationWarning>{isMounted ? timeLeft.minutes : "--"}</span>
         <span className="text-white/40">:</span>
-        <span className="text-brand-lime font-black">{timeLeft.seconds}</span>
+        <span suppressHydrationWarning className="text-brand-lime font-black">
+          {isMounted ? timeLeft.seconds : "--"}
+        </span>
       </div>
     );
   }
@@ -168,13 +172,18 @@ export default function CountdownWidget({
         <span className="text-brand-lime">SECS</span>
       </div>
       <div className="flex items-center justify-between font-display text-2xl md:text-3xl font-bold tracking-wide text-white">
-        <span>{timeLeft.days}</span>
+        <span suppressHydrationWarning>{isMounted ? timeLeft.days : "--"}</span>
         <span className="text-white/40 text-lg font-sans mx-1">:</span>
-        <span>{timeLeft.hours}</span>
+        <span suppressHydrationWarning>{isMounted ? timeLeft.hours : "--"}</span>
         <span className="text-white/40 text-lg font-sans mx-1">:</span>
-        <span>{timeLeft.minutes}</span>
+        <span suppressHydrationWarning>{isMounted ? timeLeft.minutes : "--"}</span>
         <span className="text-white/40 text-lg font-sans mx-1">:</span>
-        <span className="text-brand-lime font-black animate-pulse">{timeLeft.seconds}</span>
+        <span
+          suppressHydrationWarning
+          className="text-brand-lime font-black animate-pulse"
+        >
+          {isMounted ? timeLeft.seconds : "--"}
+        </span>
       </div>
     </div>
   );

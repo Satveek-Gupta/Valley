@@ -147,6 +147,11 @@ export default function Footer() {
                   Registration
                 </Link>
               </li>
+              <li>
+                <Link href="/my-registrations" className="hover:text-brand-lime text-brand-lime transition-colors flex items-center gap-1">
+                  <span>My Passes (QR)</span>
+                </Link>
+              </li>
             </ul>
           </div>
 

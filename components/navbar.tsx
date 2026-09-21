@@ -36,9 +36,9 @@ export default function Navbar() {
           <Link href="#timeline" className="hover:text-brand-violet transition-colors">
             TIMELINE
           </Link>
-          {/* <Link href="/leaderboard" className="hover:text-brand-violet transition-colors">
-            LEADERBOARD
-          </Link> */}
+          <Link href="/my-registrations" className="text-brand-violet hover:text-brand-violet-dark font-black transition-colors flex items-center gap-1">
+            <span>MY PASSES</span>
+          </Link>
         </nav>
 
         {/* Right: Date Badge & CTA */}

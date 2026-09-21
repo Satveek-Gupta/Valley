@@ -137,7 +137,7 @@ export default function LeaderboardPage() {
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
                 <span className="text-[10px] font-mono uppercase text-zinc-400">VENUE</span>
                 <div className="font-display text-lg sm:text-xl font-bold text-white mt-0.5">
-                  Terminal Lab 1
+                  301 ALH
                 </div>
               </div>
 
@@ -311,7 +311,7 @@ export default function LeaderboardPage() {
                   LIVE ARENA INITIALIZING
                 </h2>
                 <p className="text-xs sm:text-sm text-zinc-600 font-medium leading-relaxed">
-                  The Bulls & Bears dynamic trading leaderboard will go live on <strong>Day 3 (September 26, 2026)</strong> at Terminal Lab 1.
+                  The Bulls & Bears dynamic trading leaderboard will go live on <strong>Day 3 (September 26, 2026)</strong> at 301 ALH.
                   Scores will automatically stream here in real time as market shocks, portfolio bids, and quiz sprints occur.
                 </p>
               </div>
