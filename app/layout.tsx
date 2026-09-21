@@ -3,6 +3,7 @@ import { Anton, Archivo, Archivo_Black, Syne } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/smooth-scroll";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const anton = Anton({
   weight: "400",
@@ -170,6 +171,7 @@ export default function RootLayout({
       <body className="bg-white text-brand-ink antialiased selection:bg-brand-violet selection:text-white">
         <SmoothScroll>{children}</SmoothScroll>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
