@@ -226,78 +226,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Fallback: Check registration_events table (unified schema)
-    if (!foundRecord) {
-      try {
-        let eventReg: any = null;
-        if (isShortCode) {
-          const { data: regEvents } = await supabaseAdmin
-            .from("registration_events")
-            .select("id, registration_id, event_slug, details, checked_in_at, qr_token");
-
-          if (regEvents && regEvents.length > 0) {
-            eventReg = regEvents.find((ev: any) => {
-              const codeId = getShortCode(ev.id);
-              const codeToken = getShortCode(ev.qr_token);
-              return codeId === cleanToken || codeToken === cleanToken;
-            });
-          }
-        } else {
-          const { data } = await supabaseAdmin
-            .from("registration_events")
-            .select("id, registration_id, event_slug, details, checked_in_at, qr_token")
-            .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
-            .maybeSingle();
-          eventReg = data;
-        }
-
-        if (eventReg) {
-          foundEventSlug = eventReg.event_slug;
-          foundTable = "registration_events";
-
-          // Fetch attendee participant details
-          let partName = eventReg.details?.teamLeaderName || "Attendee";
-          let partEmail = "";
-          let partPhone = "";
-
-          if (eventReg.registration_id) {
-            const { data: reg } = await supabaseAdmin
-              .from("registrations")
-              .select("participant_id")
-              .eq("id", eventReg.registration_id)
-              .maybeSingle();
-
-            if (reg?.participant_id) {
-              const { data: part } = await supabaseAdmin
-                .from("participants")
-                .select("full_name, email, phone")
-                .eq("id", reg.participant_id)
-                .maybeSingle();
-              if (part) {
-                partName = part.full_name;
-                partEmail = part.email;
-                partPhone = part.phone;
-              }
-            }
-          }
-
-          foundRecord = {
-            id: eventReg.id,
-            qr_token: eventReg.qr_token || eventReg.id,
-            full_name: partName,
-            email: partEmail,
-            phone: partPhone,
-            team_name: eventReg.details?.teamName || null,
-            team_leader_name: eventReg.details?.teamLeaderName || partName,
-            team_members_names: eventReg.details?.teamMembersNames || eventReg.details?.partnerName || null,
-            checked_in_at: eventReg.checked_in_at || eventReg.details?.checked_in_at,
-          };
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-
     // CASE 1: Token does not match any record anywhere
     if (!foundRecord) {
       return NextResponse.json(
@@ -382,7 +310,7 @@ export async function POST(req: NextRequest) {
     const checkinTimestamp = new Date().toISOString();
 
     // Update the event table directly
-    if (foundTable && foundTable !== "registration_events") {
+    if (foundTable) {
       try {
         const { error: updErr } = await supabaseAdmin
           .from(foundTable)
@@ -393,25 +321,11 @@ export async function POST(req: NextRequest) {
           .eq("id", foundRecord.id);
 
         if (updErr) {
-          // If checked_in_at column does not exist yet on the event table, try updating checked_in_at in registration_events
           console.warn(`Could not update checked_in_at on ${foundTable}:`, updErr.message);
         }
       } catch (err) {
         console.error(`Error updating checkin on ${foundTable}:`, err);
       }
-    }
-
-    // Also sync to registration_events if present
-    try {
-      await supabaseAdmin
-        .from("registration_events")
-        .update({
-          checked_in_at: checkinTimestamp,
-          checked_in_by: volunteerEmail,
-        })
-        .or(`id.eq.${foundRecord.id}${foundRecord.qr_token ? `,qr_token.eq.${foundRecord.qr_token}` : ""}`);
-    } catch (e) {
-      // ignore
     }
 
     return NextResponse.json({

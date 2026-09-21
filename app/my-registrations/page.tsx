@@ -89,7 +89,13 @@ function MyRegistrationsContent() {
     setIsLoading(true);
     setSearchError(null);
     try {
-      const res = await fetch(`/api/my-registrations?email=${encodeURIComponent(emailToQuery.trim())}`);
+      const res = await fetch(`/api/my-registrations?email=${encodeURIComponent(emailToQuery.trim())}`, {
+        cache: "no-store",
+        headers: {
+          "Pragma": "no-cache",
+          "Cache-Control": "no-cache",
+        },
+      });
       const data = await res.json();
 
       if (!res.ok || !data.success) {

@@ -130,55 +130,6 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
       }
     }
 
-    // 2. Fallback to registration_events
-    if (!eventReg) {
-      let regEvent: any = null;
-      try {
-        if (isShortCode) {
-          const { data: regEvents } = await supabaseAdmin
-            .from("registration_events")
-            .select("*");
-
-          if (regEvents && regEvents.length > 0) {
-            regEvent = regEvents.find((ev: any) => {
-              const codeId = getShortCode(ev.id);
-              const codeToken = getShortCode(ev.qr_token);
-              return codeId === cleanToken || codeToken === cleanToken;
-            });
-          }
-        } else {
-          const { data } = await supabaseAdmin
-            .from("registration_events")
-            .select("*")
-            .or(`qr_token.eq.${token},id.eq.${token}`)
-            .maybeSingle();
-          regEvent = data;
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      if (regEvent) {
-        eventReg = regEvent;
-        if (regEvent.registration_id) {
-          const { data: reg } = await supabaseAdmin
-            .from("registrations")
-            .select("participant_id")
-            .eq("id", regEvent.registration_id)
-            .maybeSingle();
-
-          if (reg?.participant_id) {
-            const { data: part } = await supabaseAdmin
-              .from("participants")
-              .select("full_name, email")
-              .eq("id", reg.participant_id)
-              .maybeSingle();
-
-            participant = part;
-          }
-        }
-      }
-    }
   }
 
   let eventMeta: any = null;

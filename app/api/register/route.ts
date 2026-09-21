@@ -54,96 +54,37 @@ export async function POST(req: NextRequest) {
       const db = supabaseAdmin;
       let insertedId = submissionId;
 
-      // 1. Unified Relational Schema: participants -> registrations -> registration_events
-      try {
-        // Upsert or fetch participant
-        let participantId: string | null = null;
-        const { data: existingParticipant } = await supabaseAdmin
-          .from("participants")
-          .select("id")
-          .eq("email", validatedData.email.trim().toLowerCase())
-          .maybeSingle();
-
-        if (existingParticipant?.id) {
-          participantId = existingParticipant.id;
-          await supabaseAdmin
-            .from("participants")
-            .update({
-              full_name: validatedData.fullName,
-              phone: validatedData.phone,
-            })
-            .eq("id", participantId);
-        } else {
-          const { data: newParticipant, error: pError } = await supabaseAdmin
-            .from("participants")
-            .insert({
-              full_name: validatedData.fullName,
-              email: validatedData.email.trim().toLowerCase(),
-              phone: validatedData.phone,
-            })
-            .select("id")
-            .single();
-          if (!pError && newParticipant) {
-            participantId = newParticipant.id;
-          }
-        }
-
-        if (participantId) {
-          // Create registration record
-          const { data: regData, error: regError } = await supabaseAdmin
-            .from("registrations")
-            .insert({
-              participant_id: participantId,
-              confirmed_rules: true,
-              status: "confirmed",
-            })
-            .select("id")
-            .single();
-
-          if (!regError && regData?.id) {
-            insertedId = regData.id;
-            // Create registration_events with unique qr_token
-            const { error: eventRegError } = await supabaseAdmin
-              .from("registration_events")
-              .insert({
-                registration_id: regData.id,
-                event_slug: eventSlug,
-                details,
-                qr_token: qrToken,
-              });
-
-            if (eventRegError) {
-              // If qr_token column doesn't exist yet, retry without qr_token
-              console.warn("Retrying registration_events insert without qr_token:", eventRegError.message);
-              await supabaseAdmin
-                .from("registration_events")
-                .insert({
-                  registration_id: regData.id,
-                  event_slug: eventSlug,
-                  details,
-                });
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error inserting into unified registration tables:", err);
-      }
-
-      // 2. Event-specific tables (primary tables shown in Supabase Table Editor)
+      // Dedicated event table (Primary and single source of truth)
       try {
         const safeInsertEventRow = async (tableName: string, payload: Record<string, any>) => {
-          const { error: insErr } = await db.from(tableName).insert({
-            ...payload,
-            qr_token: qrToken,
-          });
+          const { data, error: insErr } = await db
+            .from(tableName)
+            .insert({
+              ...payload,
+              qr_token: qrToken,
+            })
+            .select("id")
+            .maybeSingle();
+
+          if (!insErr && data?.id) {
+            return data.id;
+          }
+
           if (insErr) {
             // If qr_token column does not exist yet, fallback to inserting without it
-            await db.from(tableName).insert(payload);
+            const { data: retryData } = await db
+              .from(tableName)
+              .insert(payload)
+              .select("id")
+              .maybeSingle();
+            return retryData?.id || null;
           }
+          return null;
         };
 
+        let rowId: string | null = null;
         if (eventSlug === "startup-roulette") {
-          await safeInsertEventRow("registrations_startup_roulette", {
+          rowId = await safeInsertEventRow("registrations_startup_roulette", {
             full_name: validatedData.fullName,
             email: validatedData.email,
             phone: validatedData.phone,
@@ -155,7 +96,7 @@ export async function POST(req: NextRequest) {
             status: "confirmed",
           });
         } else if (eventSlug === "the-war-room") {
-          await safeInsertEventRow("registrations_the_war_room", {
+          rowId = await safeInsertEventRow("registrations_the_war_room", {
             full_name: validatedData.fullName,
             email: validatedData.email,
             phone: validatedData.phone,
@@ -165,7 +106,7 @@ export async function POST(req: NextRequest) {
             status: "confirmed",
           });
         } else if (eventSlug === "the-boardroom") {
-          await safeInsertEventRow("registrations_the_boardroom", {
+          rowId = await safeInsertEventRow("registrations_the_boardroom", {
             full_name: validatedData.fullName,
             email: validatedData.email,
             phone: validatedData.phone,
@@ -175,7 +116,7 @@ export async function POST(req: NextRequest) {
             status: "confirmed",
           });
         } else if (eventSlug === "entre-prenormie") {
-          await safeInsertEventRow("registrations_entre_prenormie", {
+          rowId = await safeInsertEventRow("registrations_entre_prenormie", {
             full_name: validatedData.fullName,
             email: validatedData.email,
             phone: validatedData.phone,
@@ -183,12 +124,16 @@ export async function POST(req: NextRequest) {
             status: "confirmed",
           });
         } else if (eventSlug === "bulls-and-bears") {
-          await safeInsertEventRow("registrations_bulls_and_bears", {
+          rowId = await safeInsertEventRow("registrations_bulls_and_bears", {
             full_name: validatedData.fullName,
             email: validatedData.email,
             phone: validatedData.phone,
             status: "confirmed",
           });
+        }
+
+        if (rowId) {
+          insertedId = rowId;
         }
       } catch (err) {
         console.error("Error inserting into event registration table:", err);

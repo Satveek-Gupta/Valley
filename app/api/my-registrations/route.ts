@@ -18,7 +18,13 @@ export async function GET(req: NextRequest) {
 
     const email = emailParam.trim().toLowerCase();
     const result = await fetchParticipantRegistrations(email);
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    });
   } catch (error: any) {
     console.error("Error fetching participant registrations:", error);
     return NextResponse.json(
@@ -41,7 +47,13 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await fetchParticipantRegistrations(email);
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    });
   } catch (error: any) {
     console.error("Error processing participant registrations:", error);
     return NextResponse.json(
@@ -312,92 +324,6 @@ async function fetchParticipantRegistrations(cleanEmail: string) {
     }
   } catch (stallErr) {
     console.warn("Error querying stalls table:", stallErr);
-  }
-
-  // =========================================================================
-  // 3. RELATIONAL SCHEMA FALLBACK: registration_events & participants
-  // =========================================================================
-  try {
-    const { data: participant } = await db
-      .from("participants")
-      .select("*")
-      .ilike("email", cleanEmail)
-      .maybeSingle();
-
-    if (participant) {
-      if (!attendeeFullName && participant.full_name) {
-        attendeeFullName = participant.full_name;
-      }
-
-      const { data: regRows } = await db
-        .from("registrations")
-        .select("id")
-        .eq("participant_id", participant.id);
-
-      const regIds = (regRows || []).map((r: any) => r.id);
-      if (regIds.length > 0) {
-        const { data: eventRows } = await db
-          .from("registration_events")
-          .select("*")
-          .in("registration_id", regIds);
-
-        for (const row of eventRows || []) {
-          const slug = row.event_slug;
-          // Avoid duplicate display if already found from the 5 primary tables
-          if (processedSlugs.has(slug)) continue;
-          processedSlugs.add(slug);
-
-          const meta = eventsMap.get(slug);
-
-          if (slug === "bay-area") {
-            formattedRegistrations.push({
-              id: row.id,
-              eventSlug: slug,
-              eventName: meta?.name || "BAY AREA STALLS",
-              day: meta?.day || 1,
-              dateLabel: meta?.dateLabel || "DAY 01 & 02",
-              tagType: meta?.tagType || "violet",
-              badgeColor: meta?.badgeColor || "#7C3AED",
-              venue: meta?.venue || "Near C5 & D5 Hostels",
-              timing: meta?.timing || "10:00 AM – 6:00 PM",
-              isBayArea: true,
-              details: row.details || {},
-              createdAt: row.created_at,
-            });
-          } else {
-            const qrToken = row.qr_token || row.details?.qr_token || row.id;
-            const checkedInAt = row.checked_in_at || row.details?.checked_in_at || null;
-
-            formattedRegistrations.push({
-              id: row.id,
-              eventSlug: slug,
-              eventName: meta?.name || slug.toUpperCase().replace(/-/g, " "),
-              day: meta?.day || 1,
-              dateLabel: meta?.dateLabel || "DAY 01",
-              tagType: meta?.tagType || "violet",
-              badgeColor: meta?.badgeColor || "#7C3AED",
-              venue: meta?.venue || "Campus Venue",
-              timing: meta?.timing || "6:30pm onwards",
-              isBayArea: false,
-              qrToken: qrToken,
-              qrUrl: `${siteUrl}/verify/${qrToken}`,
-              shortCode: (qrToken as string).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase(),
-              checkedInAt: checkedInAt,
-              teamName: row.details?.teamName || null,
-              teamLeaderName: row.details?.teamLeaderName || participant.full_name,
-              teamMembersNames: row.details?.teamMembersNames || row.details?.partnerName || null,
-              partnerName: row.details?.partnerName || null,
-              ideaName: row.details?.ideaName || null,
-              ideaDescription: row.details?.ideaDescription || null,
-              founderDiscussionTopic: row.details?.founderDiscussionTopic || null,
-              createdAt: row.created_at,
-            });
-          }
-        }
-      }
-    }
-  } catch (partErr) {
-    console.warn("Error querying participants/registrations fallback:", partErr);
   }
 
   return {

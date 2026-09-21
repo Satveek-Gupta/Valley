@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   if (isSupabaseConfigured && supabaseAdmin) {
     try {
@@ -226,12 +229,30 @@ export async function DELETE(req: NextRequest) {
     }
 
     if (isSupabaseConfigured && supabaseAdmin) {
+      // First get qr_token if present
+      const { data: existingRow } = await supabaseAdmin
+        .from(tableName)
+        .select("qr_token")
+        .eq("id", id)
+        .maybeSingle();
+
       const { error } = await supabaseAdmin
         .from(tableName)
         .delete()
         .eq("id", id);
 
       if (error) throw error;
+
+      // Also clean up from registration_events if any legacy record exists
+      try {
+        const tokenToDelete = existingRow?.qr_token || id;
+        await supabaseAdmin
+          .from("registration_events")
+          .delete()
+          .or(`id.eq.${id},qr_token.eq.${tokenToDelete}`);
+      } catch (legacyErr) {
+        // ignore if table or record doesn't exist
+      }
     }
 
     return NextResponse.json({
