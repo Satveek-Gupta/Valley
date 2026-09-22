@@ -236,6 +236,27 @@ EXCEPTION
     WHEN OTHERS THEN NULL;
 END $$;
 
+-- Pre-seed the 10 Gate Volunteer accounts (2 gates per competition track)
+INSERT INTO public.admins (email, role)
+VALUES
+    -- Startup Roulette (sr)
+    ('sr_gate1@cabinetbu.tech', 'volunteer'),
+    ('sr_gate2@cabinetbu.tech', 'volunteer'),
+    -- The War Room (wr)
+    ('wr_gate1@cabinetbu.tech', 'volunteer'),
+    ('wr_gate2@cabinetbu.tech', 'volunteer'),
+    -- The Boardroom (br)
+    ('br_gate1@cabinetbu.tech', 'volunteer'),
+    ('br_gate2@cabinetbu.tech', 'volunteer'),
+    -- Entrepre-Normie (en)
+    ('en_gate1@cabinetbu.tech', 'volunteer'),
+    ('en_gate2@cabinetbu.tech', 'volunteer'),
+    -- Bulls & Bears (bb)
+    ('bb_gate1@cabinetbu.tech', 'volunteer'),
+    ('bb_gate2@cabinetbu.tech', 'volunteer')
+ON CONFLICT (email) DO UPDATE
+SET role = EXCLUDED.role;
+
 -- ==============================================================================
 -- 6. UNIFIED RELATIONAL SCHEMA (OPTIONAL BACKWARD COMPATIBILITY)
 -- ==============================================================================

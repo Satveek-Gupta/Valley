@@ -586,7 +586,7 @@ export default function VolunteerScanStationPage() {
                   <input
                     type="email"
                     required
-                    placeholder="volunteer@cabinet.edu"
+                    placeholder="e.g. sr_gate1@cabinetbu.tech"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3.5 rounded-xl border-2 border-brand-ink bg-white text-brand-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-violet shadow-[2px_2px_0px_0px_#0A0A0A]"
