@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 import { EVENTS_DATA, EventItem } from "@/lib/mock-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     if (!isSupabaseConfigured || !supabaseAdmin) {
@@ -37,6 +40,7 @@ export async function GET() {
       rewards: Array.isArray(row.rewards) ? row.rewards : typeof row.rewards === "string" ? [row.rewards] : [],
       internshipOpportunity: row.internship_opportunity || undefined,
       featured: Boolean(row.featured),
+      registrationOpen: row.registration_open !== false,
     }));
 
     return NextResponse.json({ events: formattedEvents });

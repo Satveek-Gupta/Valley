@@ -110,15 +110,22 @@ export default function EventsCarousel() {
                       {/* Top: Day tag & Event name */}
                       <div>
                         <div className="flex items-center justify-between mb-4">
-                          <span
-                            className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-                              isSelected
-                                ? "bg-white text-brand-violet"
-                                : "bg-brand-surface text-brand-ink"
-                            }`}
-                          >
-                            {event.dateLabel}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
+                                isSelected
+                                  ? "bg-white text-brand-violet"
+                                  : "bg-brand-surface text-brand-ink"
+                              }`}
+                            >
+                              {event.dateLabel}
+                            </span>
+                            {event.registrationOpen === false && (
+                              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-600 text-white shadow-xs">
+                                CLOSED
+                              </span>
+                            )}
+                          </div>
                           <span
                             className={`text-[10px] font-bold uppercase tracking-wider ${
                               isSelected ? "text-brand-lime" : "text-zinc-500"
@@ -212,6 +219,12 @@ export default function EventsCarousel() {
                 <span>{selectedEventModal.dateLabel}</span>
                 <span>•</span>
                 <span>{selectedEventModal.format}</span>
+                {selectedEventModal.registrationOpen === false && (
+                  <>
+                    <span>•</span>
+                    <span className="text-red-300 font-black">REGISTRATIONS CLOSED</span>
+                  </>
+                )}
               </div>
               <h3 className="font-display text-3xl sm:text-4xl font-black uppercase text-brand-ink">
                 {selectedEventModal.name}
@@ -304,6 +317,13 @@ export default function EventsCarousel() {
                   <span>APPLY VIA MS FORMS</span>
                   <ArrowUpRight className="w-4 h-4" />
                 </a>
+              ) : selectedEventModal.registrationOpen === false ? (
+                <button
+                  disabled
+                  className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-zinc-200 text-zinc-500 text-xs font-black uppercase tracking-wider cursor-not-allowed border border-zinc-300"
+                >
+                  <span>REGISTRATIONS CLOSED</span>
+                </button>
               ) : (
                 <Link
                   href={`/register?event=${selectedEventModal.slug}`}

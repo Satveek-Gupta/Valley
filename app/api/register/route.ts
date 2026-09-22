@@ -20,6 +20,29 @@ export async function POST(req: NextRequest) {
     const eventSlug = validatedData.selectedEvents[0];
     const timestamp = new Date().toISOString();
 
+    // Verify if registrations are open for this event
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const { data: eventRow } = await supabaseAdmin
+          .from("events")
+          .select("registration_open, name")
+          .eq("slug", eventSlug)
+          .maybeSingle();
+
+        if (eventRow && eventRow.registration_open === false) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Registrations for ${eventRow.name || eventSlug} are currently closed by festival organizers.`,
+            },
+            { status: 403 }
+          );
+        }
+      } catch (checkErr) {
+        console.warn("Could not check event registration status:", checkErr);
+      }
+    }
+
     const qrToken = crypto.randomUUID();
     let details: Record<string, any> = {};
 
