@@ -56,22 +56,24 @@ function getShortCode(val: string | null | undefined): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const rawToken = body.qrToken || body.token;
-    const gateEventSlug = body.gateEventSlug || body.eventSlug;
+    const rawToken = (body.qrToken || body.token || body.code || body.registrationId || "").toString().trim();
+    const gateEventSlug = body.gateEventSlug || body.eventSlug || "any";
     const volunteerEmail = body.volunteerEmail?.trim() || null;
+    const isAdminOverride = body.adminOverride === true || body.isAdmin === true || gateEventSlug === "any";
+    const action = body.action || body.mode || "checkin"; // "lookup" | "checkin" | "undo" | "reset"
 
-    if (!rawToken) {
+    if (!rawToken && !body.registrationId) {
       return NextResponse.json(
         {
           success: false,
           code: "INVALID_QR",
-          error: "QR token or gate pass code is required",
+          error: "QR token, attendee email, or 4-digit gate pass code is required",
         },
         { status: 400 }
       );
     }
 
-    if (!gateEventSlug) {
+    if (!gateEventSlug && !isAdminOverride) {
       return NextResponse.json(
         {
           success: false,
@@ -85,6 +87,7 @@ export async function POST(req: NextRequest) {
     const qrToken = extractQrToken(rawToken);
     const cleanToken = qrToken.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
     const isShortCode = cleanToken.length > 0 && cleanToken.length <= 4;
+    const isEmail = rawToken.includes("@");
 
     if (!isSupabaseConfigured || !supabaseAdmin) {
       return NextResponse.json(
@@ -97,131 +100,86 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const db = supabaseAdmin;
     let foundRecord: any = null;
     let foundEventSlug: string = "";
     let foundTable: string = "";
 
-    // 1. Check primary event tables directly
-    // First, check the table matching the selected gate
-    const gateTableInfo = EVENT_TABLE_MAP[gateEventSlug];
-    if (gateTableInfo) {
-      if (isShortCode) {
-        try {
-          const { data: rows } = await supabaseAdmin
-            .from(gateTableInfo.table)
-            .select("*");
+    // Search helper that tests email, 4-char shortcode, or full QR token/UUID
+    const searchInTable = async (table: string): Promise<any | null> => {
+      try {
+        if (body.registrationId) {
+          const { data: byRegId } = await db
+            .from(table)
+            .select("*")
+            .eq("id", body.registrationId)
+            .maybeSingle();
+          if (byRegId) return byRegId;
+        }
 
+        if (isEmail) {
+          const { data } = await db
+            .from(table)
+            .select("*")
+            .ilike("email", rawToken.trim());
+          if (data && data.length > 0) {
+            return data.find((r: any) => !r.checked_in_at) || data[0];
+          }
+        } else if (isShortCode) {
+          const { data: rows } = await db.from(table).select("*");
           if (rows && rows.length > 0) {
             const matches = rows.filter((r: any) => {
               const codeId = getShortCode(r.id);
               const codeToken = getShortCode(r.qr_token);
               return codeId === cleanToken || codeToken === cleanToken;
             });
-
             if (matches.length > 0) {
-              foundRecord = matches.find((r: any) => !r.checked_in_at) || matches[0];
-              foundEventSlug = gateEventSlug;
-              foundTable = gateTableInfo.table;
+              return matches.find((r: any) => !r.checked_in_at) || matches[0];
             }
           }
-        } catch (e) {
-          console.error(`Error in short code search for ${gateTableInfo.table}:`, e);
-        }
-      } else {
-        try {
-          // Search by qr_token or by id in this gate's table
-          const { data } = await supabaseAdmin
-            .from(gateTableInfo.table)
+        } else {
+          // Direct token or UUID or id match
+          const { data } = await db
+            .from(table)
             .select("*")
             .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
             .maybeSingle();
+          if (data) return data;
 
-          if (data) {
-            foundRecord = data;
-            foundEventSlug = gateEventSlug;
-            foundTable = gateTableInfo.table;
-          }
-        } catch (e) {
-          // If qr_token column doesn't exist yet, query by id
-          try {
-            const { data: byId } = await supabaseAdmin
-              .from(gateTableInfo.table)
-              .select("*")
-              .eq("id", qrToken)
-              .maybeSingle();
-            if (byId) {
-              foundRecord = byId;
-              foundEventSlug = gateEventSlug;
-              foundTable = gateTableInfo.table;
-            }
-          } catch (e2) {
-            // ignore
-          }
+          const { data: byId } = await db
+            .from(table)
+            .select("*")
+            .eq("id", qrToken)
+            .maybeSingle();
+          if (byId) return byId;
         }
+      } catch (err) {
+        console.error(`Error searching table ${table}:`, err);
+      }
+      return null;
+    };
+
+    // 1. If a specific gate event is given and valid, check that table first
+    if (gateEventSlug && gateEventSlug !== "any" && EVENT_TABLE_MAP[gateEventSlug]) {
+      const info = EVENT_TABLE_MAP[gateEventSlug];
+      const match = await searchInTable(info.table);
+      if (match) {
+        foundRecord = match;
+        foundEventSlug = gateEventSlug;
+        foundTable = info.table;
       }
     }
 
-    // 2. If not found in the selected gate's table, check the OTHER 4 tables
-    // (This detects WRONG GATE scenarios accurately)
+    // 2. If not found or if checking across all gates ("any"), check remaining tables
     if (!foundRecord) {
       for (const [slug, info] of Object.entries(EVENT_TABLE_MAP)) {
         if (slug === gateEventSlug) continue;
-
-        if (isShortCode) {
-          try {
-            const { data: rows } = await supabaseAdmin
-              .from(info.table)
-              .select("*");
-
-            if (rows && rows.length > 0) {
-              const matches = rows.filter((r: any) => {
-                const codeId = getShortCode(r.id);
-                const codeToken = getShortCode(r.qr_token);
-                return codeId === cleanToken || codeToken === cleanToken;
-              });
-
-              if (matches.length > 0) {
-                foundRecord = matches.find((r: any) => !r.checked_in_at) || matches[0];
-                foundEventSlug = slug;
-                foundTable = info.table;
-                break;
-              }
-            }
-          } catch (e) {
-            // ignore
-          }
-        } else {
-          try {
-            const { data } = await supabaseAdmin
-              .from(info.table)
-              .select("*")
-              .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
-              .maybeSingle();
-
-            if (data) {
-              foundRecord = data;
-              foundEventSlug = slug;
-              foundTable = info.table;
-              break;
-            }
-          } catch (e) {
-            // Fallback to id query
-            try {
-              const { data: byId } = await supabaseAdmin
-                .from(info.table)
-                .select("*")
-                .eq("id", qrToken)
-                .maybeSingle();
-              if (byId) {
-                foundRecord = byId;
-                foundEventSlug = slug;
-                foundTable = info.table;
-                break;
-              }
-            } catch (e2) {
-              // ignore
-            }
-          }
+        const match = await searchInTable(info.table);
+        if (match) {
+          foundRecord = match;
+          foundEventSlug = slug;
+          foundTable = info.table;
+          break;
         }
       }
     }
@@ -232,7 +190,7 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           code: "INVALID_QR",
-          error: "Invalid QR pass — no matching registration found in any event table",
+          error: `No registration found matching "${rawToken}". Check 4-digit code, email, or pass ID.`,
         },
         { status: 404 }
       );
@@ -253,14 +211,57 @@ export async function POST(req: NextRequest) {
       foundEventSlug.toUpperCase().replace(/-/g, " ");
 
     const gateEventName =
-      EVENT_TABLE_MAP[gateEventSlug]?.name ||
-      EVENTS_DATA.find((e) => e.slug === gateEventSlug)?.name ||
-      gateEventSlug.toUpperCase().replace(/-/g, " ");
+      gateEventSlug === "any"
+        ? actualEventName
+        : EVENT_TABLE_MAP[gateEventSlug]?.name ||
+          EVENTS_DATA.find((e) => e.slug === gateEventSlug)?.name ||
+          gateEventSlug.toUpperCase().replace(/-/g, " ");
 
     const matchedShortCode = getShortCode(foundRecord.qr_token || foundRecord.id);
+    const existingCheckin = foundRecord.checked_in_at || foundRecord.details?.checked_in_at;
 
-    // CASE 2: Wrong Gate
-    if (foundEventSlug !== gateEventSlug) {
+    // ACTION: LOOKUP / VERIFY ONLY (inspect details before confirming)
+    if (action === "lookup") {
+      return NextResponse.json({
+        success: true,
+        code: "RECORD_FOUND",
+        message: "Registration found",
+        attendee: attendeeInfo,
+        event: actualEventName,
+        eventSlug: foundEventSlug,
+        shortCode: matchedShortCode,
+        isAlreadyCheckedIn: !!existingCheckin,
+        checkedInAt: existingCheckin || null,
+        checkedInBy: foundRecord.checked_in_by || null,
+        registrationId: foundRecord.id,
+      });
+    }
+
+    // ACTION: UNDO / RESET CHECK-IN
+    if (action === "undo" || action === "reset") {
+      if (foundTable) {
+        await db
+          .from(foundTable)
+          .update({
+            checked_in_at: null,
+            checked_in_by: null,
+          })
+          .eq("id", foundRecord.id);
+      }
+      return NextResponse.json({
+        success: true,
+        code: "CHECKIN_RESET",
+        message: `Check-in for ${attendeeInfo.fullName} has been reset.`,
+        attendee: attendeeInfo,
+        event: actualEventName,
+        eventSlug: foundEventSlug,
+        shortCode: matchedShortCode,
+        registrationId: foundRecord.id,
+      });
+    }
+
+    // CASE 2: Wrong Gate (Only strictly enforced for non-admin volunteer scans at wrong doors)
+    if (gateEventSlug && gateEventSlug !== "any" && !isAdminOverride && foundEventSlug !== gateEventSlug) {
       return NextResponse.json(
         {
           success: false,
@@ -270,13 +271,13 @@ export async function POST(req: NextRequest) {
           gateEvent: gateEventName,
           shortCode: matchedShortCode,
           attendee: attendeeInfo,
+          registrationId: foundRecord.id,
         },
         { status: 400 }
       );
     }
 
     // CASE 3: Already Checked In
-    const existingCheckin = foundRecord.checked_in_at || foundRecord.details?.checked_in_at;
     if (existingCheckin) {
       const checkedInDate = new Date(existingCheckin);
       const formattedTime = checkedInDate.toLocaleTimeString("en-US", {
@@ -294,13 +295,16 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           code: "ALREADY_CHECKED_IN",
-          error: `Already checked in at ${formattedTime} (${formattedDate})`,
+          error: `Already checked in at ${formattedTime} (${formattedDate}) by ${foundRecord.checked_in_by || "Staff"}`,
           checkedInAt: existingCheckin,
+          checkedInBy: foundRecord.checked_in_by || null,
           formattedTime,
           formattedDate,
           event: actualEventName,
+          eventSlug: foundEventSlug,
           shortCode: matchedShortCode,
           attendee: attendeeInfo,
+          registrationId: foundRecord.id,
         },
         { status: 409 }
       );
@@ -308,15 +312,16 @@ export async function POST(req: NextRequest) {
 
     // CASE 4: Valid Check-in!
     const checkinTimestamp = new Date().toISOString();
+    const verifierTag = volunteerEmail || (isAdminOverride ? "Admin Console" : "Gate Volunteer");
 
     // Update the event table directly
     if (foundTable) {
       try {
-        const { error: updErr } = await supabaseAdmin
+        const { error: updErr } = await db
           .from(foundTable)
           .update({
             checked_in_at: checkinTimestamp,
-            checked_in_by: volunteerEmail,
+            checked_in_by: verifierTag,
           })
           .eq("id", foundRecord.id);
 
@@ -331,12 +336,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       code: "CHECKIN_CONFIRMED",
-      message: "Check-in verified successfully",
+      message: "Entry verified successfully",
       checkedInAt: checkinTimestamp,
+      checkedInBy: verifierTag,
       event: actualEventName,
       eventSlug: foundEventSlug,
       shortCode: matchedShortCode,
       attendee: attendeeInfo,
+      registrationId: foundRecord.id,
     });
   } catch (error: any) {
     console.error("Check-in route error:", error);
