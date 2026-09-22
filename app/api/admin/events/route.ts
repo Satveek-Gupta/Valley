@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
@@ -22,7 +24,30 @@ export async function PUT(request: Request) {
       });
     }
 
-    const payload = {
+    // Quick toggle: if updating registration status only
+    if (typeof body.registrationOpen === "boolean" && (!body.name || Object.keys(body).length <= 4)) {
+      const { data: updateData, error: updateError } = await supabaseAdmin
+        .from("events")
+        .update({
+          registration_open: body.registrationOpen,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("slug", slug)
+        .select()
+        .single();
+
+      if (!updateError && updateData) {
+        return NextResponse.json({
+          success: true,
+          message: `Registration for ${updateData.name || slug} is now ${body.registrationOpen ? "OPEN" : "CLOSED"}`,
+          event: updateData,
+        });
+      } else if (updateError) {
+        console.warn("Could not update registration_open column on events table:", updateError.message);
+      }
+    }
+
+    const payload: Record<string, any> = {
       slug: body.slug,
       name: body.name,
       day: Number(body.day) || 1,
@@ -40,14 +65,28 @@ export async function PUT(request: Request) {
       rewards: Array.isArray(body.rewards) ? body.rewards : typeof body.rewards === "string" ? [body.rewards] : [],
       internship_opportunity: body.internshipOpportunity || null,
       featured: Boolean(body.featured),
+      registration_open: body.registrationOpen !== false,
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabaseAdmin
+    let { data, error } = await supabaseAdmin
       .from("events")
       .upsert(payload, { onConflict: "slug" })
       .select()
       .single();
+
+    if (error && error.message?.includes("registration_open")) {
+      // If column doesn't exist yet, retry without registration_open
+      console.warn("Retrying event upsert without registration_open column:", error.message);
+      delete payload.registration_open;
+      const retry = await supabaseAdmin
+        .from("events")
+        .upsert(payload, { onConflict: "slug" })
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error("Supabase event update error:", error);

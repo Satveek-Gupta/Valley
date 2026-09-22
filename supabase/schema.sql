@@ -164,6 +164,7 @@ ALTER TABLE public.events ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT fals
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0;
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS rewards JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS rounds JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS registration_open BOOLEAN DEFAULT true;
 
 -- ==============================================================================
 -- 3. BAY AREA STALLS (FLOOR PLAN & STALL MANAGEMENT)

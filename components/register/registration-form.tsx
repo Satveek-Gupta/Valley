@@ -285,29 +285,47 @@ export default function RegistrationForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {onlineEvents.map((event) => {
             const IconComponent = ICON_MAP[event.iconName] || Sparkles;
+            const isOpen = event.registrationOpen !== false;
 
             return (
               <div
                 key={event.id}
-                onClick={() => handleSelectEvent(event.slug as EventSlug)}
-                className="group cursor-pointer rounded-3xl bg-white border-2 border-brand-ink/10 hover:border-brand-ink p-6 sm:p-7 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-xl relative overflow-hidden"
+                onClick={() => {
+                  if (isOpen) handleSelectEvent(event.slug as EventSlug);
+                }}
+                className={`rounded-3xl border-2 p-6 sm:p-7 flex flex-col justify-between transition-all duration-200 relative overflow-hidden ${
+                  isOpen
+                    ? "group cursor-pointer bg-white border-brand-ink/10 hover:border-brand-ink hover:-translate-y-1 hover:shadow-xl"
+                    : "cursor-not-allowed bg-zinc-100/90 border-zinc-300 opacity-80"
+                }`}
               >
-                {/* Top: Icon + Date Badge */}
+                {/* Top: Icon + Date Badge / Closed Badge */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110"
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md transition-transform ${
+                        isOpen ? "group-hover:scale-110" : "grayscale opacity-70"
+                      }`}
                       style={{ backgroundColor: event.badgeColor }}
                     >
                       <IconComponent className="w-6 h-6" />
                     </div>
 
-                    <span className="font-mono text-xs font-black uppercase px-3 py-1 rounded-full bg-brand-surface border border-brand-border text-brand-ink">
-                      {event.dateLabel}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {!isOpen && (
+                        <span className="font-mono text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-red-100 border border-red-300 text-red-700">
+                          CLOSED
+                        </span>
+                      )}
+                      <span className="font-mono text-xs font-black uppercase px-3 py-1 rounded-full bg-brand-surface border border-brand-border text-brand-ink">
+                        {event.dateLabel}
+                      </span>
+                    </div>
                   </div>
 
-                  <h3 className="font-display text-2xl font-black uppercase tracking-wide text-brand-ink group-hover:text-brand-violet transition-colors mb-2">
+                  <h3 className={`font-display text-2xl font-black uppercase tracking-wide mb-2 transition-colors ${
+                    isOpen ? "text-brand-ink group-hover:text-brand-violet" : "text-zinc-600 line-through decoration-zinc-400"
+                  }`}>
                     {event.name}
                   </h3>
 
@@ -318,26 +336,28 @@ export default function RegistrationForm() {
 
                 {/* Bottom: Specs & CTA Button */}
                 <div className="space-y-3 pt-4 border-t border-zinc-100">
-                  <div className="flex flex-col gap-1 text-[11px] font-bold text-zinc-500">
-                    {/* <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-brand-violet" />
-                      <span>{event.timing}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-brand-violet" />
-                      <span>{event.venue}</span>
-                    </div> */}
+                  <div className="flex items-center justify-between text-[11px] font-bold text-zinc-500">
                     <div className="flex items-center gap-1.5 text-brand-ink">
                       <Users className="w-3.5 h-3.5 text-brand-violet" />
                       <span className="font-black uppercase">{event.teamSize}</span>
                     </div>
+                    {!isOpen && (
+                      <span className="text-[10px] font-black uppercase text-red-600 tracking-wider">
+                        REGISTRATIONS CLOSED
+                      </span>
+                    )}
                   </div>
                   <button
                     type="button"
-                    className="w-full py-2.5 px-4 rounded-xl bg-brand-ink group-hover:bg-brand-violet text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-sm"
+                    disabled={!isOpen}
+                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-sm ${
+                      isOpen
+                        ? "bg-brand-ink group-hover:bg-brand-violet text-white"
+                        : "bg-zinc-300 text-zinc-500 cursor-not-allowed border border-zinc-400"
+                    }`}
                   >
-                    <span>REGISTER FOR THIS EVENT</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <span>{isOpen ? "REGISTER FOR THIS EVENT" : "REGISTRATIONS CLOSED"}</span>
+                    {isOpen && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
                   </button>
                 </div>
               </div>
@@ -421,9 +441,15 @@ export default function RegistrationForm() {
                   <span className="px-2.5 py-0.5 rounded-full bg-brand-lime text-black text-[10px] font-black uppercase">
                     {currentEventData.dateLabel}
                   </span>
-                  <span className="text-xs font-mono font-bold text-white/70">
-                    SEPTEMBER 24–26
-                  </span>
+                  {currentEventData.registrationOpen === false ? (
+                    <span className="px-2.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black uppercase tracking-wider">
+                      REGISTRATIONS CLOSED
+                    </span>
+                  ) : (
+                    <span className="text-xs font-mono font-bold text-white/70">
+                      SEPTEMBER 24–26
+                    </span>
+                  )}
                 </div>
                 <h2 className="font-display text-2xl sm:text-4xl font-black uppercase tracking-wide text-white">
                   {currentEventData.name}
@@ -446,11 +472,46 @@ export default function RegistrationForm() {
         </div>
       )}
 
-      {/* Dedicated Single-Event Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        
-        {/* Step 1: Participant Information */}
-        <div className="bg-white rounded-3xl border-2 border-brand-ink/20 p-6 sm:p-8 shadow-sm">
+      {/* If registration for this track is stopped */}
+      {currentEventData && currentEventData.registrationOpen === false ? (
+        <div className="bg-white rounded-3xl border-4 border-brand-ink p-8 sm:p-12 text-center shadow-[6px_6px_0px_0px_#0A0A0A] space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-red-100 border-2 border-red-500 text-red-600 flex items-center justify-center mx-auto shadow-md">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-xs font-black uppercase tracking-widest text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200">
+              REGISTRATIONS CLOSED
+            </span>
+            <h3 className="font-display text-3xl sm:text-4xl font-black uppercase text-brand-ink">
+              REGISTRATIONS ARE CURRENTLY PAUSED
+            </h3>
+            <p className="text-sm text-zinc-600 font-medium max-w-lg mx-auto">
+              Online entries for <strong>{currentEventData.name}</strong> have been paused by festival administrators due to capacity limits or competition schedule lockdown.
+            </p>
+          </div>
+
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={handleBackToEventSelection}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-brand-ink hover:bg-brand-violet text-white text-xs font-black uppercase tracking-wider transition-colors shadow-md"
+            >
+              BROWSE OPEN EVENTS
+            </button>
+            <Link
+              href="/"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full border-2 border-brand-ink text-brand-ink text-xs font-black uppercase tracking-wider hover:bg-zinc-100 transition-colors"
+            >
+              RETURN TO HOME
+            </Link>
+          </div>
+        </div>
+      ) : (
+        /* Dedicated Single-Event Form */
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          {/* Step 1: Participant Information */}
+          <div className="bg-white rounded-3xl border-2 border-brand-ink/20 p-6 sm:p-8 shadow-sm">
           <div className="flex items-center gap-3 pb-4 mb-6 border-b border-zinc-200">
             <div className="w-8 h-8 rounded-xl bg-brand-ink text-white flex items-center justify-center font-display font-bold">
               01
@@ -873,6 +934,7 @@ export default function RegistrationForm() {
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -17,12 +17,14 @@ import {
   Award,
   CheckCircle2,
   Clock,
+  Power,
 } from "lucide-react";
 import RegistrationsTable from "./registrations-table";
 import StallManager from "./stall-manager";
 import SettingsForm from "./settings-form";
 import EventsManager from "./events-manager";
 import SponsorsManager from "./sponsors-manager";
+import { EVENTS_DATA, EventItem } from "@/lib/mock-data";
 
 export default function AdminDashboard({
   initialRegistrations = [],
@@ -39,6 +41,46 @@ export default function AdminDashboard({
 }) {
 
   const [activeTab, setActiveTab] = useState<"overview" | "registrations" | "events" | "sponsors" | "stalls" | "settings">("overview");
+  const [eventsList, setEventsList] = useState<EventItem[]>(EVENTS_DATA);
+  const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch("/api/events");
+        const json = await res.json();
+        if (json.events && json.events.length > 0) {
+          setEventsList(json.events);
+        }
+      } catch (err) {
+        console.error("Failed to load events in dashboard", err);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  const handleToggleRegistration = async (slug: string, currentOpen: boolean) => {
+    setTogglingSlug(slug);
+    const newStatus = !currentOpen;
+    setEventsList((prev) =>
+      prev.map((e) => (e.slug === slug ? { ...e, registrationOpen: newStatus } : e))
+    );
+    try {
+      const res = await fetch("/api/admin/events", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, registrationOpen: newStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to toggle registration");
+    } catch (err) {
+      console.error(err);
+      setEventsList((prev) =>
+        prev.map((e) => (e.slug === slug ? { ...e, registrationOpen: currentOpen } : e))
+      );
+    } finally {
+      setTogglingSlug(null);
+    }
+  };
 
   // Calculations
   const totalRegistrations = initialRegistrations.length;
@@ -51,6 +93,18 @@ export default function AdminDashboard({
   const entreprenormieCount = byEvent?.["entre-prenormie"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "entre-prenormie" || r.selectedEvents?.includes("entre-prenormie")).length;
   const bullsCount = byEvent?.["bulls-and-bears"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "bulls-and-bears" || r.selectedEvents?.includes("bulls-and-bears")).length;
   const bayAreaCount = initialRegistrations.filter((r) => r.selectedEvents?.includes("bay-area")).length;
+
+  const getEventCount = (slug: string) => {
+    switch (slug) {
+      case "startup-roulette": return rouletteCount;
+      case "the-war-room": return warRoomCount;
+      case "the-boardroom": return boardroomCount;
+      case "entre-prenormie": return entreprenormieCount;
+      case "bulls-and-bears": return bullsCount;
+      case "bay-area": return bayAreaCount;
+      default: return initialRegistrations.filter(r => r.eventSlug === slug || r.selectedEvents?.includes(slug)).length;
+    }
+  };
 
 
   return (
@@ -347,48 +401,102 @@ export default function AdminDashboard({
               )}
             </div>
 
-            {/* Per-Track Breakdown Card */}
-            <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
-              <h3 className="font-display text-xl font-bold uppercase text-brand-ink mb-4">
-                TRACK PARTICIPATION BREAKDOWN
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200">
-                  <div className="text-xs font-black uppercase text-[#FF5A36]">Startup Roulette</div>
-                  <div className="font-display text-2xl font-bold text-brand-ink mt-1">{rouletteCount} Registrations</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 1 · Hexagon</div>
+            {/* Per-Track Breakdown & Registration Controls Card */}
+            <div className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100">
+                <div>
+                  <h3 className="font-display text-xl font-bold uppercase text-brand-ink">
+                    TRACK REGISTRATION & PARTICIPATION CONTROLS
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Live registration counters and 1-click pause/resume toggles for each festival track.
+                  </p>
                 </div>
+                <button
+                  onClick={() => setActiveTab("events")}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-zinc-300 hover:bg-zinc-50 text-brand-ink text-xs font-bold uppercase transition-colors self-start sm:self-auto"
+                >
+                  <span>Open Full Event Editor</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-                <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200">
-                  <div className="text-xs font-black uppercase text-[#2F6FED]">The War Room</div>
-                  <div className="font-display text-2xl font-bold text-brand-ink mt-1">{warRoomCount} Registrations</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 2 · 301 ALH</div>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {eventsList.map((ev) => {
+                  const count = getEventCount(ev.slug);
+                  const isOpen = ev.registrationOpen !== false;
+                  const isPending = togglingSlug === ev.slug;
 
-                <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200">
-                  <div className="text-xs font-black uppercase text-[#FF5A36]">The Boardroom</div>
-                  <div className="font-display text-2xl font-bold text-brand-ink mt-1">{boardroomCount} Duos</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 2 · Hexagon</div>
-                </div>
+                  return (
+                    <div
+                      key={ev.slug}
+                      className={`p-5 rounded-2xl border-2 transition-all flex flex-col justify-between gap-4 ${
+                        isOpen
+                          ? "bg-white border-zinc-200 hover:border-zinc-300"
+                          : "bg-red-50/40 border-red-200 shadow-sm"
+                      }`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md text-white shadow-xs"
+                            style={{ backgroundColor: ev.badgeColor || "#7C3AED" }}
+                          >
+                            {ev.dateLabel || `Day ${ev.day}`}
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              isOpen
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                            {isOpen ? "REG OPEN" : "CLOSED"}
+                          </span>
+                        </div>
 
-                <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
-                  <div className="text-xs font-black uppercase text-brand-violet">Entrepre-Normie</div>
-                  <div className="font-display text-2xl font-bold text-brand-ink mt-1">{entreprenormieCount} 1-on-1s</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 3 · 002 ALH</div>
-                </div>
+                        <div>
+                          <h4 className="font-display font-bold text-base text-brand-ink uppercase leading-tight">
+                            {ev.name}
+                          </h4>
+                          <p className="text-[10px] font-semibold text-zinc-400 uppercase mt-0.5">
+                            {ev.venue} · {ev.timing}
+                          </p>
+                        </div>
 
-                <div className="p-4 rounded-2xl bg-lime-50 border border-lime-300">
-                  <div className="text-xs font-black uppercase text-emerald-800">Bulls & Bears</div>
-                  <div className="font-display text-2xl font-bold text-brand-ink mt-1">{bullsCount} Traders</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Day 3 · 301 ALH</div>
-                </div>
+                        <div className="pt-2">
+                          <div className="font-display text-2xl font-black text-brand-ink">
+                            {count}
+                          </div>
+                          <div className="text-[10px] font-bold text-zinc-500 uppercase">
+                            Registered Participants / Teams
+                          </div>
+                        </div>
+                      </div>
 
-                <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
-                  <div className="text-xs font-black uppercase text-brand-violet">Bay Area Stalls</div>
-                  <div className="font-display text-2xl font-bold text-brand-ink mt-1">{bayAreaCount} Stalls</div>
-                  <div className="text-[10px] font-bold text-zinc-500 mt-1">Days 1 & 2 · Near C5 & D5 Hostels</div>
-                </div>
+                      {/* Action Row */}
+                      <div className="pt-3 border-t border-zinc-100 flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-mono text-zinc-400">
+                          slug: {ev.slug}
+                        </span>
+
+                        <button
+                          type="button"
+                          disabled={isPending}
+                          onClick={() => handleToggleRegistration(ev.slug, isOpen)}
+                          className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border-2 transition-all active:scale-95 disabled:opacity-50 ${
+                            isOpen
+                              ? "bg-red-50 hover:bg-red-100 text-red-700 border-red-300 shadow-[1px_1px_0px_0px_#EF4444]"
+                              : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300 shadow-[1px_1px_0px_0px_#10B981]"
+                          }`}
+                        >
+                          {isPending ? "Updating..." : isOpen ? "Stop Reg" : "Open Reg"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

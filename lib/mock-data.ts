@@ -21,6 +21,7 @@ export interface EventItem {
   rewards: string[];
   internshipOpportunity?: string;
   featured?: boolean;
+  registrationOpen?: boolean;
 }
 
 export const EVENTS_DATA: EventItem[] = [

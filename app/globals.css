@@ -94,3 +94,86 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Scanner Camera Viewport Styles */
+#volunteer-qr-reader {
+  border: none !important;
+  background: transparent !important;
+}
+#volunteer-qr-reader video {
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 1.5rem !important;
+}
+#volunteer-qr-reader img {
+  display: none !important;
+}
+#volunteer-qr-reader #volunteer-qr-reader__scan_region {
+  min-height: 100% !important;
+}
+
+@keyframes laserSweep {
+  0% {
+    top: 6%;
+    opacity: 0.2;
+  }
+  50% {
+    top: 94%;
+    opacity: 0.95;
+  }
+  100% {
+    top: 6%;
+    opacity: 0.2;
+  }
+}
+
+.scan-laser-line {
+  animation: laserSweep 2.2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.04);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Neobrutalist interactive utilities */
+.neo-btn {
+  border: 2px solid #0A0A0A;
+  box-shadow: 3px 3px 0px 0px #0A0A0A;
+  transition: all 0.15s ease;
+}
+.neo-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px 0px #0A0A0A;
+}
+.neo-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px #0A0A0A;
+}
+
+.neo-card {
+  background: #FFFFFF;
+  border: 2px solid #0A0A0A;
+  border-radius: 1.5rem;
+  box-shadow: 4px 4px 0px 0px #0A0A0A;
+}
+
+.neo-card-lg {
+  background: #FFFFFF;
+  border: 3px solid #0A0A0A;
+  border-radius: 2rem;
+  box-shadow: 6px 6px 0px 0px #0A0A0A;
+}
+
+

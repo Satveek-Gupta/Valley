@@ -151,6 +151,56 @@ export default function EventsManager() {
     }
   };
 
+  const handleQuickToggleRegistration = async (
+    slug: string,
+    currentStatus: boolean = true,
+    e?: React.MouseEvent
+  ) => {
+    if (e) e.stopPropagation();
+    const newStatus = !currentStatus;
+
+    // Optimistic local update
+    setEvents((prev) =>
+      prev.map((ev) =>
+        ev.slug === slug ? { ...ev, registrationOpen: newStatus } : ev
+      )
+    );
+    if (formData.slug === slug) {
+      setFormData((prev) => ({ ...prev, registrationOpen: newStatus }));
+    }
+
+    try {
+      const res = await fetch("/api/admin/events", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, registrationOpen: newStatus }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        throw new Error(json.error || "Failed to update registration status");
+      }
+      setSaveStatus({
+        type: "success",
+        message: `${slug.toUpperCase()} registration status changed to ${newStatus ? "OPEN" : "STOPPED / CLOSED"}!`,
+      });
+    } catch (err: any) {
+      console.error("Failed to toggle registration", err);
+      // Revert on error
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev.slug === slug ? { ...ev, registrationOpen: currentStatus } : ev
+        )
+      );
+      if (formData.slug === slug) {
+        setFormData((prev) => ({ ...prev, registrationOpen: currentStatus }));
+      }
+      setSaveStatus({
+        type: "error",
+        message: err.message || "Failed to update registration status",
+      });
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -257,38 +307,67 @@ export default function EventsManager() {
             {events.map((ev) => {
               const isSelected = ev.slug === selectedSlug;
               const EvIcon = ICON_COMPONENTS[ev.iconName] || Sparkles;
+              const isOpen = ev.registrationOpen !== false;
               return (
-                <button
+                <div
                   key={ev.slug}
                   onClick={() => handleSelectEvent(ev)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center justify-between ${
+                  className={`w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer ${
                     isSelected
                       ? "bg-white border-brand-violet ring-2 ring-brand-violet/20 shadow-md"
                       : "bg-white/60 hover:bg-white border-zinc-200 text-zinc-700"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold"
-                      style={{ backgroundColor: ev.badgeColor || "#7C3AED" }}
-                    >
-                      <EvIcon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-display font-bold text-sm text-brand-ink uppercase">
-                        {ev.name}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shrink-0 shadow-sm"
+                        style={{ backgroundColor: ev.badgeColor || "#7C3AED" }}
+                      >
+                        <EvIcon className="w-5 h-5 text-white" />
                       </div>
-                      <div className="text-[10px] font-bold text-zinc-400 uppercase">
-                        {ev.dateLabel || `Day ${ev.day}`} · {ev.venue || "Campus"}
+                      <div className="min-w-0">
+                        <div className="font-display font-bold text-sm text-brand-ink uppercase truncate">
+                          {ev.name}
+                        </div>
+                        <div className="text-[10px] font-bold text-zinc-400 uppercase">
+                          {ev.dateLabel || `Day ${ev.day}`} · {ev.venue || "Campus"}
+                        </div>
                       </div>
                     </div>
+                    <ChevronRight
+                      className={`w-4 h-4 shrink-0 ${
+                        isSelected ? "text-brand-violet" : "text-zinc-300"
+                      }`}
+                    />
                   </div>
-                  <ChevronRight
-                    className={`w-4 h-4 ${
-                      isSelected ? "text-brand-violet" : "text-zinc-300"
-                    }`}
-                  />
-                </button>
+
+                  {/* Registration Status & 1-Click Toggle */}
+                  <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-zinc-100">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        isOpen
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                      {isOpen ? "REG OPEN" : "REG CLOSED"}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={(e) => handleQuickToggleRegistration(ev.slug, isOpen, e)}
+                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border transition-all active:scale-95 ${
+                        isOpen
+                          ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                          : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                      }`}
+                    >
+                      {isOpen ? "Stop Reg" : "Open Reg"}
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -304,7 +383,11 @@ export default function EventsManager() {
             >
               <div className="flex items-center justify-between text-[10px] font-black uppercase">
                 <span className="bg-black/20 px-2.5 py-0.5 rounded-full">{formData.dateLabel || `Day ${formData.day}`}</span>
-                <span>{formData.format || "Track"}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                  formData.registrationOpen !== false ? "bg-emerald-500 text-white" : "bg-red-600 text-white"
+                }`}>
+                  {formData.registrationOpen !== false ? "REG OPEN" : "REG CLOSED"}
+                </span>
               </div>
               <div className="font-display text-lg font-black uppercase leading-tight">
                 {formData.name || "Event Title"}
@@ -360,6 +443,48 @@ export default function EventsManager() {
                   <span>{isSaving ? "SAVING..." : "SAVE CHANGES"}</span>
                 </button>
               </div>
+            </div>
+
+            {/* Registration Status Banner & Instant Toggle */}
+            <div className={`p-4 rounded-2xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
+              formData.registrationOpen !== false 
+                ? "bg-emerald-50/90 border-emerald-500/40 text-emerald-950" 
+                : "bg-red-50/90 border-red-500/50 text-red-950"
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-3.5 h-3.5 rounded-full ${
+                  formData.registrationOpen !== false ? "bg-emerald-500 shadow-[0_0_8px_#10B981] animate-pulse" : "bg-red-500 shadow-[0_0_8px_#EF4444]"
+                }`} />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider">
+                      REGISTRATION STATUS:
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                      formData.registrationOpen !== false ? "bg-emerald-200 text-emerald-900" : "bg-red-200 text-red-900"
+                    }`}>
+                      {formData.registrationOpen !== false ? "OPEN / ACCEPTING ENTRIES" : "STOPPED / CLOSED"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] opacity-75 font-medium mt-0.5">
+                    {formData.registrationOpen !== false 
+                      ? "Users can currently discover and register for this event across the platform."
+                      : "Public registrations are paused. Users see 'REGISTRATIONS CLOSED' and form submissions are blocked."}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleQuickToggleRegistration(formData.slug, formData.registrationOpen !== false)}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border-2 shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 transition-all shrink-0 ${
+                  formData.registrationOpen !== false
+                    ? "bg-red-500 hover:bg-red-600 text-white border-brand-ink"
+                    : "bg-emerald-400 hover:bg-emerald-500 text-brand-ink border-brand-ink"
+                }`}
+              >
+                {formData.registrationOpen !== false ? "Stop Registrations" : "Open Registrations"}
+              </button>
             </div>
 
             {/* General Info Grid */}
