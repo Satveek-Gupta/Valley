@@ -36,6 +36,7 @@ import SettingsForm from "./settings-form";
 import EventsManager from "./events-manager";
 import SponsorsManager from "./sponsors-manager";
 import { EVENTS_DATA, EventItem } from "@/lib/mock-data";
+import { getAuthHeaders } from "@/lib/auth-client";
 
 export default function AdminDashboard({
   initialRegistrations = [],
@@ -93,9 +94,10 @@ export default function AdminDashboard({
       prev.map((e) => (e.slug === slug ? { ...e, registrationOpen: newStatus } : e))
     );
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/admin/events", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ slug, registrationOpen: newStatus }),
       });
       if (!res.ok) throw new Error("Failed to toggle registration");
@@ -121,9 +123,10 @@ export default function AdminDashboard({
     setFallbackResult(null);
 
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/checkin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           qrToken: clean,
           gateEventSlug: fallbackGateSlug,
@@ -152,9 +155,10 @@ export default function AdminDashboard({
     setFallbackError(null);
 
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/checkin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           qrToken: codeToUse,
           registrationId: registrationId || fallbackResult?.registrationId,
@@ -218,9 +222,10 @@ export default function AdminDashboard({
   const handleResetEntry = async (registrationId: string, eventSlug: string, shortCode?: string) => {
     setIsConfirmingEntry(true);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/checkin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           qrToken: shortCode || registrationId,
           registrationId,

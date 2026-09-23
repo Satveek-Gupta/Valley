@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { verifyAuth } from "@/lib/auth-server";
 
 export async function POST(request: Request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth || !auth.isAdmin) {
+      return NextResponse.json(
+        { error: "Unauthorized. Administrator privileges required." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { name, tier, category, website_url, logo_url } = body;
 
@@ -49,6 +58,14 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth || !auth.isAdmin) {
+      return NextResponse.json(
+        { error: "Unauthorized. Administrator privileges required." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { id, name, tier, category, website_url, logo_url, sort_order } = body;
 
@@ -95,6 +112,14 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth || !auth.isAdmin) {
+      return NextResponse.json(
+        { error: "Unauthorized. Administrator privileges required." },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

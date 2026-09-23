@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { verifyAuth } from "@/lib/auth-server";
 
 export const dynamic = "force-dynamic";
 
 export async function PUT(request: Request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth || !auth.isAdmin) {
+      return NextResponse.json(
+        { error: "Unauthorized. Administrator privileges required." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { slug } = body;
 

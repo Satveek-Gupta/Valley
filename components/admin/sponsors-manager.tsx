@@ -16,6 +16,7 @@ import {
   Save,
 } from "lucide-react";
 import { SPONSORS_LIST } from "@/lib/mock-data";
+import { getAuthHeaders } from "@/lib/auth-client";
 
 interface Sponsor {
   id?: string;
@@ -92,10 +93,11 @@ export default function SponsorsManager() {
     setIsLoading(true);
     setStatusMessage(null);
     try {
+      const authHeaders = await getAuthHeaders();
       for (const item of SPONSORS_LIST) {
         await fetch("/api/admin/sponsors", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify(item),
         });
       }
@@ -147,11 +149,12 @@ export default function SponsorsManager() {
     setStatusMessage(null);
 
     try {
+      const authHeaders = await getAuthHeaders();
       if (editingSponsor && editingSponsor.id) {
         // Update existing sponsor
         const res = await fetch("/api/admin/sponsors", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({
             id: editingSponsor.id,
             ...formData,
@@ -171,7 +174,7 @@ export default function SponsorsManager() {
         // Create new sponsor
         const res = await fetch("/api/admin/sponsors", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify(formData),
         });
         const json = await res.json();
@@ -203,8 +206,10 @@ export default function SponsorsManager() {
 
     try {
       if (deletingSponsor.id) {
+        const authHeaders = await getAuthHeaders();
         const res = await fetch(`/api/admin/sponsors?id=${deletingSponsor.id}`, {
           method: "DELETE",
+          headers: { ...authHeaders },
         });
         const json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || "Failed to delete sponsor");

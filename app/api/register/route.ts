@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registrationSchema } from "@/lib/schema";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { verifyAuth } from "@/lib/auth-server";
 
 // In-memory fallback stores per event for development/preview when Supabase env keys are not provided
 const fallbackStores: Record<string, any[]> = {
@@ -13,6 +15,22 @@ const fallbackStores: Record<string, any[]> = {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate Limiting: 10 registrations per minute per IP
+    const clientIp = getClientIp(req);
+    const rateCheck = checkRateLimit(`register:${clientIp}`, 10, 60);
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Too many registration attempts. Please wait ${rateCheck.resetSeconds} seconds.`,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": rateCheck.resetSeconds.toString() },
+        }
+      );
+    }
+
     const body = await req.json();
     const validatedData = registrationSchema.parse(body);
 
@@ -204,7 +222,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (!auth || !auth.isAdmin) {
+    return NextResponse.json(
+      { total: 0, error: "Unauthorized. Administrator privileges required." },
+      { status: 401 }
+    );
+  }
+
   const allRegistrations = Object.values(fallbackStores).flat();
   return NextResponse.json({
     total: allRegistrations.length,

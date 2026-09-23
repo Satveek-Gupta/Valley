@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 import { EVENTS_DATA } from "@/lib/mock-data";
 import { getRestrictedEventSlug } from "@/lib/volunteer-gates";
+import { verifyAuth } from "@/lib/auth-server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -56,15 +58,59 @@ function getShortCode(val: string | null | undefined): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate Limiting Check
+    const clientIp = getClientIp(req);
+    const rateCheck = checkRateLimit(`checkin:${clientIp}`, 40, 60);
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "RATE_LIMITED",
+          error: `Too many check-in requests. Please wait ${rateCheck.resetSeconds} seconds.`,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": rateCheck.resetSeconds.toString() },
+        }
+      );
+    }
+
+    // 2. Server-side Authentication & Role Verification
+    const auth = await verifyAuth(req);
+    if (!auth || (!auth.isVolunteer && !auth.isAdmin)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "UNAUTHORIZED",
+          error: "Authentication required. Gate volunteer or administrator access required.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const rawToken = (body.qrToken || body.token || body.code || body.registrationId || "").toString().trim();
-    const volunteerEmail = body.volunteerEmail?.trim() || null;
-    const restrictedSlug = getRestrictedEventSlug(volunteerEmail);
-    const isAdminOverride = (body.adminOverride === true || body.isAdmin === true) && !restrictedSlug;
-    const gateEventSlug = (restrictedSlug && !isAdminOverride)
-      ? restrictedSlug
-      : (body.gateEventSlug || body.eventSlug || "any");
     const action = body.action || body.mode || "checkin"; // "lookup" | "checkin" | "undo" | "reset"
+
+    // Only verified administrators can perform reset or undo actions
+    if ((action === "undo" || action === "reset") && !auth.isAdmin) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "FORBIDDEN",
+          error: "Only administrators are authorized to reset check-in status.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Determine gate restrictions strictly from verified auth session
+    const volunteerEmail = auth.email;
+    const restrictedSlug = auth.restrictedEventSlug;
+    const isAdminOverride = auth.isAdmin && (body.adminOverride === true || body.isAdmin === true);
+    const gateEventSlug = (!auth.isAdmin && restrictedSlug)
+      ? restrictedSlug
+      : (body.gateEventSlug || body.eventSlug || (auth.isAdmin ? "any" : restrictedSlug));
 
     if (!rawToken && !body.registrationId) {
       return NextResponse.json(
@@ -130,7 +176,11 @@ export async function POST(req: NextRequest) {
             return data.find((r: any) => !r.checked_in_at) || data[0];
           }
         } else if (isShortCode) {
-          const { data: rows } = await db.from(table).select("*");
+          const { data: rows } = await db
+            .from(table)
+            .select("id, qr_token, full_name, email, phone, team_name, team_leader_name, team_members_names, partner_name, checked_in_at, checked_in_by, created_at")
+            .order("created_at", { ascending: false })
+            .limit(300);
           if (rows && rows.length > 0) {
             const matches = rows.filter((r: any) => {
               const codeId = getShortCode(r.id);
@@ -143,19 +193,22 @@ export async function POST(req: NextRequest) {
           }
         } else {
           // Direct token or UUID or id match
-          const { data } = await db
-            .from(table)
-            .select("*")
-            .or(`qr_token.eq.${qrToken},id.eq.${qrToken}`)
-            .maybeSingle();
-          if (data) return data;
+          const safeToken = qrToken.replace(/[^a-zA-Z0-9-_]/g, "");
+          if (safeToken) {
+            const { data } = await db
+              .from(table)
+              .select("*")
+              .or(`qr_token.eq.${safeToken},id.eq.${safeToken}`)
+              .maybeSingle();
+            if (data) return data;
 
-          const { data: byId } = await db
-            .from(table)
-            .select("*")
-            .eq("id", qrToken)
-            .maybeSingle();
-          if (byId) return byId;
+            const { data: byId } = await db
+              .from(table)
+              .select("*")
+              .eq("id", safeToken)
+              .maybeSingle();
+            if (byId) return byId;
+          }
         }
       } catch (err) {
         console.error(`Error searching table ${table}:`, err);

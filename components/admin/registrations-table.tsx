@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Check,
 } from "lucide-react";
+import { getAuthHeaders } from "@/lib/auth-client";
 
 export interface EventRegistration {
   id: string;
@@ -158,9 +159,13 @@ export default function RegistrationsTable({
   const handleDelete = async (record: EventRegistration) => {
     setIsDeleting(true);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch(
         `/api/admin/registrations?id=${encodeURIComponent(record.id)}&eventSlug=${encodeURIComponent(record.eventSlug)}`,
-        { method: "DELETE" }
+        {
+          method: "DELETE",
+          headers: { ...authHeaders },
+        }
       );
       const data = await res.json();
 
