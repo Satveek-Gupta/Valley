@@ -7,7 +7,7 @@ import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function Hero() {
   return (
-    <section id="overview" className="relative w-full pt-6 sm:pt-10 pb-16 sm:pb-24 overflow-hidden bg-white">
+    <section id="overview" className="scroll-mt-20 sm:scroll-mt-24 relative w-full pt-6 sm:pt-10 pb-16 sm:pb-24 overflow-hidden bg-white">
       {/* Background Animated Grid Pattern */}
       <AnimatedGridPattern
         numSquares={40}

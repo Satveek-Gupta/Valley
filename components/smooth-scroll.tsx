@@ -17,6 +17,11 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
       smoothWheel: true,
     });
 
+    // Expose lenis instance globally for navbar and internal anchor navigation
+    if (typeof window !== "undefined") {
+      (window as any).lenis = lenis;
+    }
+
     function raf(time: number) {
       lenis.raf(time);
       requestAnimationFrame(raf);
@@ -27,6 +32,9 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
     return () => {
       cancelAnimationFrame(animId);
       lenis.destroy();
+      if (typeof window !== "undefined") {
+        delete (window as any).lenis;
+      }
     };
   }, []);
 

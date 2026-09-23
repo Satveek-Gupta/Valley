@@ -18,7 +18,7 @@ export default function SponsorsPrizes() {
       .catch((err) => console.error("Failed to load dynamic sponsors", err));
   }, []);
   return (
-    <section id="sponsors" className="relative w-full py-16 sm:py-24 bg-brand-ink text-white border-y-2 border-white/10 overflow-hidden">
+    <section id="sponsors" className="scroll-mt-20 sm:scroll-mt-24 relative w-full py-16 sm:py-24 bg-brand-ink text-white border-y-2 border-white/10 overflow-hidden">
       <AnimatedGridPattern
         numSquares={35}
         maxOpacity={0.15}

@@ -45,7 +45,7 @@ export default function EventsCarousel() {
   }, [api, events]);
 
   return (
-    <section id="events" className="relative w-full py-16 sm:py-24 bg-[#FAFAFA] border-b border-brand-ink/10 overflow-hidden">
+    <section id="events" className="scroll-mt-20 sm:scroll-mt-24 relative w-full py-16 sm:py-24 bg-[#FAFAFA] border-b border-brand-ink/10 overflow-hidden">
       <AnimatedGridPattern
         numSquares={35}
         maxOpacity={0.12}
