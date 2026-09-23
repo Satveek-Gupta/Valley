@@ -7,7 +7,7 @@ import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 
 export default function TimelineBento() {
   return (
-    <section id="timeline" className="relative w-full py-16 sm:py-24 bg-[#F8F8F8] border-b border-brand-ink/10 overflow-hidden">
+    <section id="timeline" className="scroll-mt-20 sm:scroll-mt-24 relative w-full py-16 sm:py-24 bg-[#F8F8F8] border-b border-brand-ink/10 overflow-hidden">
       <AnimatedGridPattern
         numSquares={40}
         maxOpacity={0.12}
