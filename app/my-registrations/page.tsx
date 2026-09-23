@@ -501,7 +501,7 @@ function MyRegistrationsContent() {
                         <div className="bg-white p-3 rounded-2xl shadow-inner my-1">
                           <QRCodeSVG
                             id={`qr-svg-${reg.eventSlug}`}
-                            value={reg.qrUrl || `https://cabinetvalley.in/verify/${reg.qrToken || reg.id}`}
+                            value={reg.qrUrl || `https://valley.cabinetbu.tech/verify/${reg.qrToken || reg.id}`}
                             size={180}
                             level="H"
                             includeMargin={false}
