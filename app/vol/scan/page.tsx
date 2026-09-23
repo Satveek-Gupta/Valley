@@ -10,8 +10,6 @@ import {
   AlertTriangle,
   RotateCw,
   RotateCcw,
-  Volume2,
-  VolumeX,
   Keyboard,
   LogOut,
   Clock,
@@ -103,43 +101,6 @@ interface ScanResult {
   timestamp: string;
 }
 
-// Native Web Audio synth beeps + mobile haptic pulse
-function playTone(type: "success" | "error") {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    if (type === "success") {
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.25);
-
-      if (typeof navigator !== "undefined" && navigator.vibrate) {
-        navigator.vibrate([60, 30, 60]);
-      }
-    } else {
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(220, ctx.currentTime);
-      gain.gain.setValueAtTime(0.35, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-
-      if (typeof navigator !== "undefined" && navigator.vibrate) {
-        navigator.vibrate([180, 80, 180]);
-      }
-    }
-  } catch {
-    // Audio context may be restricted by browser policy before first interaction
-  }
-}
 
 export default function VolunteerScanStationPage() {
   // Auth state
@@ -160,7 +121,6 @@ export default function VolunteerScanStationPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [manualTokenInput, setManualTokenInput] = useState("");
   const [showManualModal, setShowManualModal] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [torchOn, setTorchOn] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
@@ -401,7 +361,6 @@ export default function VolunteerScanStationPage() {
         throw new Error(data.error || "Failed to confirm check-in");
       }
 
-      if (soundEnabled) playTone("success");
       try {
         confetti({
           particleCount: 50,
@@ -439,7 +398,6 @@ export default function VolunteerScanStationPage() {
         ...prev.slice(0, 29),
       ]);
     } catch (err: any) {
-      if (soundEnabled) playTone("error");
       alert(err.message || "Failed to admit attendee");
     } finally {
       setAdmittingParticipantId(null);
@@ -500,7 +458,6 @@ export default function VolunteerScanStationPage() {
         throw new Error(data.error || "Check-in failed");
       }
 
-      if (soundEnabled) playTone("success");
       try {
         confetti({
           particleCount: 50,
@@ -541,7 +498,6 @@ export default function VolunteerScanStationPage() {
         ...prev.slice(0, 29),
       ]);
     } catch (err: any) {
-      if (soundEnabled) playTone("error");
       setDirectCodeFeedback({
         message: err.message || "Failed to confirm pass code",
         type: "error",
@@ -593,7 +549,6 @@ export default function VolunteerScanStationPage() {
         let result: ScanResult;
 
         if (res.ok && data.success) {
-          if (soundEnabled) playTone("success");
           try {
             confetti({
               particleCount: 45,
@@ -631,8 +586,6 @@ export default function VolunteerScanStationPage() {
             )
           );
         } else {
-          if (soundEnabled) playTone("error");
-
           if (data.code === "WRONG_GATE") {
             result = {
               status: "wrong_gate",
@@ -667,7 +620,6 @@ export default function VolunteerScanStationPage() {
         setActiveOverlay(result);
         setScanHistory((prev) => [result, ...prev.slice(0, 24)]);
       } catch (err: any) {
-        if (soundEnabled) playTone("error");
         const errResult: ScanResult = {
           status: "error",
           title: "SERVER ERROR",
@@ -678,7 +630,7 @@ export default function VolunteerScanStationPage() {
         setScanHistory((prev) => [errResult, ...prev.slice(0, 24)]);
       }
     },
-    [isProcessing, selectedGate, soundEnabled, volunteerEmail]
+    [isProcessing, selectedGate, volunteerEmail]
   );
 
   const dismissOverlay = () => {
@@ -1132,17 +1084,8 @@ export default function VolunteerScanStationPage() {
             </div>
           </div>
 
-          {/* Quick Actions / Sound / Logout */}
+          {/* Quick Actions / Logout */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`p-2.5 rounded-xl border-2 border-brand-ink transition-all neo-btn cursor-pointer ${
-                soundEnabled ? "bg-brand-lime text-brand-ink" : "bg-zinc-100 text-zinc-400"
-              }`}
-              title={soundEnabled ? "Sound enabled" : "Sound muted"}
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
 
             {volunteerEmail && (
               <span className="hidden md:inline-block text-[11px] font-mono font-bold text-zinc-700 bg-zinc-100 px-3 py-2 rounded-xl border-2 border-brand-ink truncate max-w-[180px]">

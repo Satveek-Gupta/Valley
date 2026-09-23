@@ -176,11 +176,13 @@ export async function POST(req: NextRequest) {
             return data.find((r: any) => !r.checked_in_at) || data[0];
           }
         } else if (isShortCode) {
-          const { data: rows } = await db
+          const { data: rows, error: queryErr } = await db
             .from(table)
-            .select("id, qr_token, full_name, email, phone, team_name, team_leader_name, team_members_names, partner_name, checked_in_at, checked_in_by, created_at")
-            .order("created_at", { ascending: false })
-            .limit(300);
+            .select("*")
+            .order("created_at", { ascending: false });
+          if (queryErr) {
+            console.error(`Error querying ${table} for shortCode:`, queryErr);
+          }
           if (rows && rows.length > 0) {
             const matches = rows.filter((r: any) => {
               const codeId = getShortCode(r.id);
