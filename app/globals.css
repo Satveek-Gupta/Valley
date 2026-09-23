@@ -95,6 +95,31 @@
   scrollbar-width: none;
 }
 
+/* Explicitly visible custom scrollbar for attendee roster & manual entry tables */
+.roster-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #7C3AED #E4E4E7;
+  overflow-y: auto;
+}
+.roster-scrollbar::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+  display: block !important;
+}
+.roster-scrollbar::-webkit-scrollbar-track {
+  background: #F4F4F6 !important;
+  border-radius: 9999px !important;
+  border: 1px solid #E4E4E7 !important;
+}
+.roster-scrollbar::-webkit-scrollbar-thumb {
+  background: #7C3AED !important;
+  border-radius: 9999px !important;
+  border: 1.5px solid #0A0A0A !important;
+}
+.roster-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6D28D9 !important;
+}
+
 /* Scanner Camera Viewport Styles */
 #volunteer-qr-reader {
   border: none !important;

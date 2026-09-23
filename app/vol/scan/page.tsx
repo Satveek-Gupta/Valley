@@ -9,6 +9,7 @@ import {
   XCircle,
   AlertTriangle,
   RotateCw,
+  RotateCcw,
   Volume2,
   VolumeX,
   Keyboard,
@@ -30,10 +31,16 @@ import {
   Radio,
   UserCheck,
   Users,
+  Search,
+  RefreshCw,
+  Filter,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getRestrictedEventSlug, getEventNameFromSlug } from "@/lib/volunteer-gates";
 
 // 5 GATED EVENTS ONLY — Bay Area NEVER appears in gate station
 const DEFAULT_GATED_GATES = [
@@ -156,7 +163,26 @@ export default function VolunteerScanStationPage() {
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [torchOn, setTorchOn] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
-  const [activeMobileView, setActiveMobileView] = useState<"scanner" | "history">("scanner");
+  const [activeMobileView, setActiveMobileView] = useState<"scanner" | "participants" | "history">("scanner");
+  const [activeDesktopView, setActiveDesktopView] = useState<"viewfinder" | "participants">("viewfinder");
+
+  // Event Participants Desk State
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [isLoadingParticipants, setIsLoadingParticipants] = useState(false);
+  const [participantsError, setParticipantsError] = useState<string | null>(null);
+  const [participantSearch, setParticipantSearch] = useState("");
+  const [participantFilter, setParticipantFilter] = useState<"all" | "pending" | "checked_in">("all");
+  const [admittingParticipantId, setAdmittingParticipantId] = useState<string | null>(null);
+  const [rosterExpanded, setRosterExpanded] = useState(false);
+
+  // Manual Direct Code State at top of desk
+  const [directCodeInput, setDirectCodeInput] = useState("");
+  const [isDirectCodeAdmitting, setIsDirectCodeAdmitting] = useState(false);
+  const [directCodeFeedback, setDirectCodeFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Email Restriction detection
+  const restrictedGateSlug = getRestrictedEventSlug(volunteerEmail);
+  const isGateRestricted = !!restrictedGateSlug;
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const overlayTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -235,6 +261,44 @@ export default function VolunteerScanStationPage() {
     }
   }, []);
 
+  // Whenever volunteerEmail changes or restrictedGateSlug is found, lock selectedGate
+  useEffect(() => {
+    if (restrictedGateSlug) {
+      setSelectedGate(restrictedGateSlug);
+      sessionStorage.setItem("cv_vol_gate", restrictedGateSlug);
+    }
+  }, [restrictedGateSlug]);
+
+  const fetchParticipants = useCallback(
+    async (slug?: string) => {
+      const targetSlug = slug || selectedGate;
+      if (!targetSlug) return;
+      setIsLoadingParticipants(true);
+      setParticipantsError(null);
+      try {
+        const emailParam = volunteerEmail ? `&volunteerEmail=${encodeURIComponent(volunteerEmail)}` : "";
+        const res = await fetch(`/api/vol/participants?eventSlug=${targetSlug}${emailParam}`);
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Failed to load event participants");
+        }
+        setParticipants(data.participants || []);
+      } catch (err: any) {
+        console.error("Error loading participants:", err);
+        setParticipantsError(err.message || "Failed to fetch event participants");
+      } finally {
+        setIsLoadingParticipants(false);
+      }
+    },
+    [selectedGate, volunteerEmail]
+  );
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchParticipants(selectedGate);
+    }
+  }, [isAuthenticated, selectedGate, fetchParticipants]);
+
   // Handle volunteer Supabase login
   const handleVolunteerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,14 +327,27 @@ export default function VolunteerScanStationPage() {
 
         if (data.session?.user) {
           setIsAuthenticated(true);
-          setVolunteerEmail(data.session.user.email || cleanEmail);
-          sessionStorage.setItem("cv_vol_email", cleanEmail);
+          const email = data.session.user.email || cleanEmail;
+          setVolunteerEmail(email);
+          sessionStorage.setItem("cv_vol_email", email);
+
+          const restricted = getRestrictedEventSlug(email);
+          if (restricted) {
+            setSelectedGate(restricted);
+            sessionStorage.setItem("cv_vol_gate", restricted);
+          }
         }
       } else {
         // Dev / local preview fallback
         setIsAuthenticated(true);
         setVolunteerEmail(cleanEmail);
         sessionStorage.setItem("cv_vol_email", cleanEmail);
+
+        const restricted = getRestrictedEventSlug(cleanEmail);
+        if (restricted) {
+          setSelectedGate(restricted);
+          sessionStorage.setItem("cv_vol_gate", restricted);
+        }
       }
     } catch (err: any) {
       console.error("Volunteer login failed:", err);
@@ -293,8 +370,178 @@ export default function VolunteerScanStationPage() {
   };
 
   const handleGateChange = (slug: string) => {
+    if (isGateRestricted && slug !== restrictedGateSlug) {
+      return; // blocked
+    }
     setSelectedGate(slug);
     sessionStorage.setItem("cv_vol_gate", slug);
+  };
+
+  // Direct participant checkin from the participants desk
+  const handleDirectParticipantCheckin = async (participant: any) => {
+    setAdmittingParticipantId(participant.id);
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          qrToken: participant.shortCode || participant.id,
+          registrationId: participant.id,
+          gateEventSlug: selectedGate,
+          volunteerEmail: volunteerEmail || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to confirm check-in");
+      }
+
+      if (soundEnabled) playTone("success");
+      try {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ["#C6F135", "#7C3AED", "#FF5A36", "#2F6FED"],
+        });
+      } catch {}
+
+      const timestamp = data.checkedInAt || new Date().toISOString();
+      const verifier = data.checkedInBy || volunteerEmail || "Gate Volunteer";
+
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.id === participant.id ? { ...p, checkedInAt: timestamp, checkedInBy: verifier } : p
+        )
+      );
+
+      setScanHistory((prev) => [
+        {
+          status: "success",
+          title: "GATE ENTRY CONFIRMED",
+          message: `Pass #${participant.shortCode} manually verified at door.`,
+          attendee: {
+            fullName: participant.fullName,
+            email: participant.email,
+            teamName: participant.teamName,
+            teamMembersNames: participant.teamMembersNames,
+          },
+          event: data.event || currentGateInfo?.name,
+          shortCode: participant.shortCode,
+          checkedInAt: timestamp,
+          timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+        },
+        ...prev.slice(0, 29),
+      ]);
+    } catch (err: any) {
+      if (soundEnabled) playTone("error");
+      alert(err.message || "Failed to admit attendee");
+    } finally {
+      setAdmittingParticipantId(null);
+    }
+  };
+
+  const handleDirectParticipantReset = async (participant: any) => {
+    setAdmittingParticipantId(participant.id);
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          qrToken: participant.shortCode || participant.id,
+          registrationId: participant.id,
+          gateEventSlug: selectedGate,
+          action: "reset",
+          adminOverride: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to reset check-in");
+      }
+
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.id === participant.id ? { ...p, checkedInAt: null, checkedInBy: null } : p
+        )
+      );
+    } catch (err: any) {
+      alert(err.message || "Failed to reset check-in");
+    } finally {
+      setAdmittingParticipantId(null);
+    }
+  };
+
+  const handleDirectCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = directCodeInput.trim().toUpperCase();
+    if (!code) return;
+    setIsDirectCodeAdmitting(true);
+    setDirectCodeFeedback(null);
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          qrToken: code,
+          gateEventSlug: selectedGate,
+          volunteerEmail: volunteerEmail || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Check-in failed");
+      }
+
+      if (soundEnabled) playTone("success");
+      try {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ["#C6F135", "#7C3AED", "#FF5A36", "#2F6FED"],
+        });
+      } catch {}
+
+      const timestamp = data.checkedInAt || new Date().toISOString();
+      const verifier = data.checkedInBy || volunteerEmail || "Gate Volunteer";
+
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.shortCode === code || p.id === data.registrationId
+            ? { ...p, checkedInAt: timestamp, checkedInBy: verifier }
+            : p
+        )
+      );
+
+      setDirectCodeFeedback({
+        message: `Entry confirmed for ${data.attendee?.fullName || "Attendee"} (#${data.shortCode || code})!`,
+        type: "success",
+      });
+      setDirectCodeInput("");
+
+      setScanHistory((prev) => [
+        {
+          status: "success",
+          title: "GATE ENTRY CONFIRMED",
+          message: `Pass #${data.shortCode || code} verified.`,
+          attendee: data.attendee,
+          event: data.event || currentGateInfo?.name,
+          shortCode: data.shortCode || code,
+          checkedInAt: timestamp,
+          timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+        },
+        ...prev.slice(0, 29),
+      ]);
+    } catch (err: any) {
+      if (soundEnabled) playTone("error");
+      setDirectCodeFeedback({
+        message: err.message || "Failed to confirm pass code",
+        type: "error",
+      });
+    } finally {
+      setIsDirectCodeAdmitting(false);
+    }
   };
 
   // Perform check-in API call with strict hardware rate-limiting
@@ -360,6 +607,21 @@ export default function VolunteerScanStationPage() {
             shortCode: data.shortCode,
             timestamp: scanTime,
           };
+
+          // Sync with local participants state
+          setParticipants((prev) =>
+            prev.map((p) =>
+              (data.registrationId && p.id === data.registrationId) ||
+              (data.shortCode && p.shortCode === data.shortCode) ||
+              (p.qrToken && p.qrToken === token)
+                ? {
+                    ...p,
+                    checkedInAt: data.checkedInAt || new Date().toISOString(),
+                    checkedInBy: data.checkedInBy || volunteerEmail || "Gate Volunteer",
+                  }
+                : p
+            )
+          );
         } else {
           if (soundEnabled) playTone("error");
 
@@ -528,6 +790,33 @@ export default function VolunteerScanStationPage() {
   const successCount = scanHistory.filter((s) => s.status === "success").length;
   const totalCount = scanHistory.length;
 
+  const checkedInCount = participants.filter((p) => !!p.checkedInAt).length;
+  const pendingCount = participants.length - checkedInCount;
+
+  const filteredParticipants = participants.filter((p) => {
+    if (participantFilter === "pending" && p.checkedInAt) return false;
+    if (participantFilter === "checked_in" && !p.checkedInAt) return false;
+
+    const q = participantSearch.toLowerCase().trim();
+    if (!q) return true;
+
+    const shortCode = (p.shortCode || "").toLowerCase();
+    const name = (p.fullName || "").toLowerCase();
+    const email = (p.email || "").toLowerCase();
+    const phone = (p.phone || "").toLowerCase();
+    const team = (p.teamName || "").toLowerCase();
+    const members = (p.teamMembersNames || "").toLowerCase();
+
+    return (
+      shortCode.includes(q) ||
+      name.includes(q) ||
+      email.includes(q) ||
+      phone.includes(q) ||
+      team.includes(q) ||
+      members.includes(q)
+    );
+  });
+
   // =========================================================================
   // VIEW 1: VOLUNTEER AUTHENTICATION SCREEN (NEOBRUTALIST THEMED)
   // =========================================================================
@@ -568,10 +857,10 @@ export default function VolunteerScanStationPage() {
               <span className="text-[10px] font-black uppercase tracking-widest text-brand-violet bg-violet-100 border border-violet-300 px-3 py-1 rounded-full inline-block">
                 OFFICIAL VOLUNTEER LOGIN
               </span>
-              <h1 className="font-display text-3xl font-black uppercase text-brand-ink tracking-tight pt-1">
+              <h1 className="font-display text-3xl font-black uppercase text-brand-ink tracking-wide leading-tight pt-1">
                 GATE OPERATOR SIGN IN
               </h1>
-              <p className="text-xs text-zinc-600 font-medium leading-relaxed">
+              <p className="text-xs text-zinc-600 font-medium leading-relaxed mt-1">
                 Log in with your volunteer account to unlock the camera scanner and gate pass verification.
               </p>
             </div>
@@ -693,7 +982,7 @@ export default function VolunteerScanStationPage() {
                   {activeOverlay.title}
                 </span>
 
-                <h2 className="font-display text-3xl sm:text-5xl font-black uppercase tracking-tight text-brand-ink mt-2 leading-none">
+                <h2 className="font-display text-3xl sm:text-5xl font-black uppercase tracking-wide text-brand-ink mt-2.5 leading-tight">
                   {activeOverlay.status === "success"
                     ? "CHECK-IN CONFIRMED"
                     : activeOverlay.status === "wrong_gate"
@@ -703,7 +992,7 @@ export default function VolunteerScanStationPage() {
                     : "PASS NOT FOUND"}
                 </h2>
 
-                <p className="text-xs sm:text-sm font-semibold text-zinc-600 mt-1 max-w-sm mx-auto">
+                <p className="text-xs sm:text-sm font-semibold text-zinc-600 mt-2 max-w-sm mx-auto leading-relaxed">
                   {activeOverlay.message}
                 </p>
               </div>
@@ -718,7 +1007,7 @@ export default function VolunteerScanStationPage() {
                   </span>
                   <div className="flex items-center gap-2">
                     {activeOverlay.shortCode && (
-                      <span className="text-xs font-mono font-black text-brand-ink bg-brand-lime border border-brand-ink px-2 py-0.5 rounded-lg">
+                      <span className="text-xs font-mono font-black text-brand-ink bg-brand-lime border border-brand-ink px-2 py-0.5 rounded-lg tracking-wider">
                         #{activeOverlay.shortCode}
                       </span>
                     )}
@@ -729,11 +1018,11 @@ export default function VolunteerScanStationPage() {
                 </div>
 
                 <div>
-                  <div className="text-2xl sm:text-3xl font-display font-black uppercase text-brand-ink leading-tight">
+                  <div className="text-2xl sm:text-3xl font-display font-black uppercase tracking-wide text-brand-ink leading-tight">
                     {activeOverlay.attendee.fullName}
                   </div>
                   {activeOverlay.attendee.email && (
-                    <div className="text-xs font-mono text-zinc-600 truncate mt-0.5">
+                    <div className="text-xs font-mono text-zinc-600 truncate mt-1">
                       {activeOverlay.attendee.email}
                     </div>
                   )}
@@ -741,7 +1030,7 @@ export default function VolunteerScanStationPage() {
 
                 {activeOverlay.attendee.teamName && (
                   <div className="bg-white rounded-xl p-3 border border-brand-ink flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-black uppercase text-zinc-500">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
                       TEAM:
                     </span>
                     <span className="text-xs font-black text-brand-violet uppercase tracking-wide">
@@ -752,10 +1041,10 @@ export default function VolunteerScanStationPage() {
 
                 {activeOverlay.attendee.teamMembersNames && (
                   <div className="pt-1">
-                    <span className="text-[10px] font-black uppercase text-zinc-400 block mb-0.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 block mb-1">
                       PARTNER / TEAM MEMBERS:
                     </span>
-                    <p className="text-xs font-bold text-zinc-800">
+                    <p className="text-xs font-bold text-zinc-800 leading-snug">
                       {activeOverlay.attendee.teamMembersNames}
                     </p>
                   </div>
@@ -829,7 +1118,7 @@ export default function VolunteerScanStationPage() {
                   LIVE
                 </span>
               </div>
-              <p className="text-[11px] font-mono text-zinc-600 truncate max-w-[200px] sm:max-w-none">
+              <p className="text-[11px] font-mono text-zinc-600 truncate max-w-[200px] sm:max-w-none mt-0.5 leading-normal">
                 Station: <strong className="text-brand-ink">{currentGateInfo?.name}</strong> ({currentGateInfo?.venue})
               </p>
             </div>
@@ -855,7 +1144,7 @@ export default function VolunteerScanStationPage() {
 
             <button
               onClick={handleVolunteerLogout}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-zinc-100 border-2 border-brand-ink text-brand-ink text-xs font-black uppercase transition-all neo-btn cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-zinc-100 border-2 border-brand-ink text-brand-ink text-xs font-black uppercase tracking-wide transition-all neo-btn cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">SIGN OUT</span>
@@ -869,244 +1158,343 @@ export default function VolunteerScanStationPage() {
       {/* ===================================================================== */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 space-y-6">
         {/* =================================================================== */}
-        {/* 1. GATE STATION SELECTOR CAROUSEL (5 GATED TRACKS)                 */}
+        {/* 1. GATE STATION SELECTOR / ASSIGNED TRACK HEADER                    */}
         {/* =================================================================== */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-[11px] font-mono font-black uppercase tracking-widest text-zinc-600 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-brand-violet" />
-              SELECT ARENA GATE (GATED EVENTS)
-            </span>
-            <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline font-bold">
-              1-TAP SWITCH
-            </span>
+        {isGateRestricted ? (
+          /* Focused single-event station card for restricted door volunteers */
+          <div className="bg-white rounded-3xl border-3 border-brand-ink p-4 sm:p-5 shadow-[5px_5px_0px_0px_#0A0A0A] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div
+                className="w-12 h-12 rounded-2xl border-2 border-brand-ink flex items-center justify-center shadow-[2px_2px_0px_0px_#0A0A0A] flex-shrink-0"
+                style={{ backgroundColor: currentGateInfo.color }}
+              >
+                <MapPin className="w-6 h-6 text-white stroke-[2.5]" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-lime border border-brand-ink text-brand-ink shadow-[1px_1px_0px_0px_#0A0A0A]">
+                    {currentGateInfo.day}
+                  </span>
+                  <span className="text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-100 text-brand-violet border border-violet-300">
+                    ASSIGNED GATE STATION
+                  </span>
+                </div>
+                <h1 className="font-display text-xl sm:text-2xl font-black uppercase tracking-wide text-brand-ink mt-1 leading-snug">
+                  {currentGateInfo.name}
+                </h1>
+                <p className="text-xs font-mono text-zinc-500 font-bold flex items-center gap-1.5 mt-1 leading-normal">
+                  <span>📍 {currentGateInfo.venue}</span>
+                  <span className="text-zinc-300">·</span>
+                  <span className="text-brand-violet truncate">{volunteerEmail}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <div className="px-3.5 py-2 rounded-xl bg-zinc-50 border-2 border-brand-ink text-left sm:text-right">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-bold block">
+                  DOOR ACCESS
+                </span>
+                <span className="text-xs font-mono font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1.5 justify-start sm:justify-end">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  AUTHENTICATED
+                </span>
+              </div>
+            </div>
           </div>
+        ) : (
+          /* Multi-gate carousel for admin/organizer accounts */
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-mono font-black uppercase tracking-widest text-zinc-600 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-brand-violet" />
+                SELECT ARENA GATE (GATED EVENTS)
+              </span>
+              <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline font-bold">
+                1-TAP SWITCH
+              </span>
+            </div>
 
-          {/* Horizontal Tactile Event Cards Carousel */}
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar scroll-smooth">
-            {gatedGates.map((gate) => {
-              const isSelected = gate.slug === selectedGate;
-              return (
-                <button
-                  key={gate.slug}
-                  onClick={() => handleGateChange(gate.slug)}
-                  className={`flex-shrink-0 p-3.5 sm:p-4 rounded-2xl border-2 text-left transition-all duration-150 cursor-pointer relative min-w-[170px] sm:min-w-[190px] ${
-                    isSelected
-                      ? "bg-white border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] scale-[1.02] ring-2 ring-brand-ink"
-                      : "bg-white/80 hover:bg-white border-zinc-300 hover:border-brand-ink text-zinc-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.05)]"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span
-                      className="w-3 h-3 rounded-full border border-brand-ink flex-shrink-0"
-                      style={{ backgroundColor: gate.color }}
-                    />
-                    <span
-                      className={`text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-full border border-brand-ink ${
-                        isSelected
-                          ? "bg-brand-lime text-brand-ink font-bold"
-                          : "bg-zinc-100 text-zinc-600"
-                      }`}
-                    >
-                      {isSelected ? "ACTIVE" : gate.day}
-                    </span>
-                  </div>
+            <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar scroll-smooth">
+              {gatedGates.map((gate) => {
+                const isSelected = gate.slug === selectedGate;
+                return (
+                  <button
+                    key={gate.slug}
+                    onClick={() => handleGateChange(gate.slug)}
+                    className={`flex-shrink-0 p-3.5 sm:p-4 rounded-2xl border-2 text-left transition-all duration-150 relative min-w-[170px] sm:min-w-[190px] ${
+                      isSelected
+                        ? "bg-white border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] scale-[1.02] ring-2 ring-brand-ink cursor-pointer"
+                        : "bg-white/80 hover:bg-white border-zinc-300 hover:border-brand-ink text-zinc-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.05)] cursor-pointer"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span
+                        className="w-3 h-3 rounded-full border border-brand-ink flex-shrink-0"
+                        style={{ backgroundColor: gate.color }}
+                      />
+                      <span
+                        className={`text-[9px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded-full border border-brand-ink ${
+                          isSelected
+                            ? "bg-brand-lime text-brand-ink font-bold"
+                            : "bg-zinc-100 text-zinc-600"
+                        }`}
+                      >
+                        {isSelected ? "ACTIVE GATE" : gate.day}
+                      </span>
+                    </div>
 
-                  <div className="font-display text-sm sm:text-base font-black uppercase tracking-tight text-brand-ink truncate">
-                    {gate.name}
-                  </div>
+                    <div className="font-display text-sm sm:text-base font-black uppercase tracking-wide text-brand-ink truncate leading-snug">
+                      {gate.name}
+                    </div>
 
-                  <div className="text-[11px] font-mono text-zinc-500 font-bold truncate mt-0.5">
-                    📍 {gate.venue}
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="text-[11px] font-mono text-zinc-500 font-bold truncate mt-1">
+                      📍 {gate.venue}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* =================================================================== */}
-        {/* 2. MOBILE VIEW SWITCHER (SCANNER vs RECENT LOG)                     */}
+        {/* 2. VIEW SWITCHERS (MOBILE 3-TABS & DESKTOP WORKSTATION TOGGLE)       */}
         {/* =================================================================== */}
-        <div className="flex lg:hidden bg-zinc-200 p-1.5 rounded-2xl border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A]">
+        {/* Mobile View Switcher */}
+        <div className="flex lg:hidden bg-zinc-200 p-1.5 rounded-2xl border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A] gap-1">
           <button
             onClick={() => setActiveMobileView("scanner")}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeMobileView === "scanner"
                 ? "bg-brand-ink text-white shadow-sm"
                 : "text-zinc-600 hover:text-brand-ink"
             }`}
           >
-            <Camera className="w-4 h-4" />
-            <span>CAMERA SCANNER</span>
+            <Camera className="w-3.5 h-3.5" />
+            <span>SCANNER</span>
+          </button>
+          <button
+            onClick={() => setActiveMobileView("participants")}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeMobileView === "participants"
+                ? "bg-brand-ink text-white shadow-sm"
+                : "text-zinc-600 hover:text-brand-ink"
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>ATTENDEES ({participants.length})</span>
           </button>
           <button
             onClick={() => setActiveMobileView("history")}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeMobileView === "history"
                 ? "bg-brand-ink text-white shadow-sm"
                 : "text-zinc-600 hover:text-brand-ink"
             }`}
           >
-            <History className="w-4 h-4" />
+            <History className="w-3.5 h-3.5" />
             <span>LOG ({scanHistory.length})</span>
+          </button>
+        </div>
+
+        {/* Desktop Workstation View Switcher */}
+        <div className="hidden lg:grid grid-cols-2 gap-2 bg-white p-2 rounded-2xl border-2 border-brand-ink shadow-[3px_3px_0px_0px_#0A0A0A]">
+          <button
+            type="button"
+            onClick={() => setActiveDesktopView("viewfinder")}
+            className={`py-3 px-5 rounded-xl text-xs font-black uppercase tracking-wide transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none ${
+              activeDesktopView === "viewfinder"
+                ? "bg-brand-ink text-white shadow-[2px_2px_0px_0px_#0A0A0A]"
+                : "bg-zinc-50 hover:bg-zinc-100 text-zinc-600 hover:text-brand-ink"
+            }`}
+          >
+            <Camera className="w-4 h-4" />
+            <span>CAMERA SCANNER & RECENT FEED</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveDesktopView("participants")}
+            className={`py-3 px-5 rounded-xl text-xs font-black uppercase tracking-wide transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none ${
+              activeDesktopView === "participants"
+                ? "bg-brand-violet text-white shadow-[2px_2px_0px_0px_#0A0A0A]"
+                : "bg-zinc-50 hover:bg-zinc-100 text-zinc-600 hover:text-brand-ink"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>EVENT ATTENDEES & MANUAL DESK ({participants.length})</span>
+            {pendingCount > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-brand-lime text-brand-ink text-[10px] font-mono font-black tracking-wider shadow-xs">
+                {pendingCount} PENDING
+              </span>
+            )}
           </button>
         </div>
 
         {/* =================================================================== */}
         {/* 3. CORE HARDWARE WORKSTATION: CAMERA & RECENT SCANS                 */}
         {/* =================================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* CAMERA VIEWFINDER CONSOLE */}
-          <div
-            className={`lg:col-span-7 space-y-4 ${
-              activeMobileView === "history" ? "hidden lg:block" : "block"
-            }`}
-          >
-            <div className="bg-white rounded-3xl border-3 border-brand-ink p-5 sm:p-7 shadow-[6px_6px_0px_0px_#0A0A0A] flex flex-col items-center">
-              {/* Viewfinder Console Header */}
-              <div className="w-full flex items-center justify-between mb-4 border-b-2 border-zinc-200 pb-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full border border-brand-ink"
-                    style={{ backgroundColor: currentGateInfo.color }}
-                  />
-                  <span className="font-display text-base font-black uppercase tracking-wide text-brand-ink">
-                    {currentGateInfo.name} GATE
+        {activeDesktopView === "viewfinder" && activeMobileView !== "participants" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* CAMERA VIEWFINDER CONSOLE */}
+            <div
+              className={`lg:col-span-7 space-y-4 ${
+                activeMobileView === "history" ? "hidden lg:block" : "block"
+              }`}
+            >
+              <div className="bg-white rounded-3xl border-3 border-brand-ink p-5 sm:p-7 shadow-[6px_6px_0px_0px_#0A0A0A] flex flex-col items-center">
+                {/* Viewfinder Console Header */}
+                <div className="w-full flex items-center justify-between mb-4 border-b-2 border-zinc-200 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full border border-brand-ink"
+                      style={{ backgroundColor: currentGateInfo.color }}
+                    />
+                    <span className="font-display text-base font-black uppercase tracking-wide text-brand-ink">
+                      {currentGateInfo.name} GATE
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider">
+                    {scannerRunning ? "● CAMERA LIVE" : "○ CAMERA IDLE"}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
-                  {scannerRunning ? "● CAMERA LIVE" : "○ CAMERA IDLE"}
-                </span>
-              </div>
 
-              {/* Physical Camera Screen Container */}
-              <div className="w-full max-w-sm aspect-square bg-black rounded-2xl overflow-hidden relative border-3 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] flex items-center justify-center">
-                {/* HTML5 QR Mount */}
-                <div id="volunteer-qr-reader" className="w-full h-full object-cover" />
+                {/* Physical Camera Screen Container */}
+                <div className="w-full max-w-sm aspect-square bg-black rounded-2xl overflow-hidden relative border-3 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] flex items-center justify-center">
+                  {/* HTML5 QR Mount */}
+                  <div id="volunteer-qr-reader" className="w-full h-full object-cover" />
 
-                {/* RUNNING SCANNER RETICLE */}
-                {scannerRunning && !activeOverlay && (
-                  <>
-                    {/* 4-Second Rate-Limiting Cooldown Display */}
-                    {cooldownRemaining > 0 ? (
-                      <div className="absolute inset-0 bg-white/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20 animate-in fade-in duration-150">
-                        <div className="w-14 h-14 rounded-2xl bg-brand-lime border-2 border-brand-ink flex items-center justify-center mb-2.5 shadow-[3px_3px_0px_0px_#0A0A0A]">
-                          <Clock className="w-7 h-7 text-brand-ink animate-spin" />
+                  {/* RUNNING SCANNER RETICLE */}
+                  {scannerRunning && !activeOverlay && (
+                    <>
+                      {/* 4-Second Rate-Limiting Cooldown Display */}
+                      {cooldownRemaining > 0 ? (
+                        <div className="absolute inset-0 bg-white/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20 animate-in fade-in duration-150">
+                          <div className="w-14 h-14 rounded-2xl bg-brand-lime border-2 border-brand-ink flex items-center justify-center mb-2.5 shadow-[3px_3px_0px_0px_#0A0A0A]">
+                            <Clock className="w-7 h-7 text-brand-ink animate-spin" />
+                          </div>
+                          <span className="text-[10px] font-mono font-black uppercase tracking-widest text-zinc-500">
+                            COOLDOWN PAUSE
+                          </span>
+                          <span className="font-display text-4xl font-black text-brand-ink mt-0.5 tracking-wide">
+                            {cooldownRemaining}s
+                          </span>
+                          <div className="w-44 h-3 bg-zinc-200 rounded-full overflow-hidden mt-3 border border-brand-ink">
+                            <div
+                              className="h-full bg-brand-lime transition-all duration-1000 ease-linear"
+                              style={{ width: `${((4 - cooldownRemaining) / 4) * 100}%` }}
+                            />
+                          </div>
+                          <p className="text-[10px] font-mono text-zinc-600 mt-2 font-bold tracking-wide">
+                            Preventing duplicate scans...
+                          </p>
                         </div>
-                        <span className="text-[10px] font-mono font-black uppercase tracking-widest text-zinc-500">
-                          COOLDOWN PAUSE
-                        </span>
-                        <span className="font-display text-4xl font-black text-brand-ink mt-0.5">
-                          {cooldownRemaining}s
-                        </span>
-                        <div className="w-44 h-3 bg-zinc-200 rounded-full overflow-hidden mt-3 border border-brand-ink">
-                          <div
-                            className="h-full bg-brand-lime transition-all duration-1000 ease-linear"
-                            style={{ width: `${((4 - cooldownRemaining) / 4) * 100}%` }}
-                          />
+                      ) : (
+                        /* ACTIVE CYBER RETICLE & LASER LINE */
+                        <div className="absolute inset-6 pointer-events-none flex flex-col items-center justify-center">
+                          {/* Animated Laser Scanning Beam */}
+                          <div className="w-full h-1 bg-gradient-to-r from-transparent via-brand-lime to-transparent scan-laser-line shadow-[0_0_12px_#C6F135] absolute" />
+
+                          {/* Reticle Brackets */}
+                          <div className="absolute top-0 left-0 w-8 h-8 border-t-3 border-l-3 border-brand-lime rounded-tl-lg" />
+                          <div className="absolute top-0 right-0 w-8 h-8 border-t-3 border-r-3 border-brand-lime rounded-tr-lg" />
+                          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-3 border-l-3 border-brand-lime rounded-bl-lg" />
+                          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-3 border-r-3 border-brand-lime rounded-br-lg" />
+
+                          <div className="w-16 h-16 rounded-xl border border-white/30 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-brand-lime animate-ping" />
+                          </div>
                         </div>
-                        <p className="text-[10px] font-mono text-zinc-600 mt-2 font-bold">
-                          Preventing duplicate scans...
+                      )}
+
+                      {/* Top Floating Controls on Active Camera */}
+                      <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                        <button
+                          onClick={toggleCamera}
+                          className="p-2.5 rounded-xl bg-white/90 hover:bg-white text-brand-ink border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer"
+                          title="Switch front/back camera"
+                        >
+                          <RotateCw className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={toggleTorch}
+                          className={`p-2.5 rounded-xl border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer ${
+                            torchOn ? "bg-amber-300 text-brand-ink" : "bg-white/90 hover:bg-white text-brand-ink"
+                          }`}
+                          title={torchOn ? "Torch On" : "Torch Off"}
+                        >
+                          <Flashlight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* IDLE CAMERA STATE */}
+                  {!scannerRunning && (
+                    <div className="absolute inset-0 bg-zinc-900 flex flex-col items-center justify-center p-6 text-center space-y-3 z-10">
+                      <div className="w-16 h-16 rounded-2xl bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center text-brand-lime shadow-inner">
+                        <Camera className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <h3 className="font-display text-2xl font-black uppercase text-white tracking-wide leading-tight">
+                          SCANNER STANDBY
+                        </h3>
+                        <p className="text-xs text-zinc-400 mt-1.5 max-w-[240px] leading-relaxed">
+                          Press the button below to turn on the camera for attendee QR verification.
                         </p>
                       </div>
-                    ) : (
-                      /* ACTIVE CYBER RETICLE & LASER LINE */
-                      <div className="absolute inset-6 pointer-events-none flex flex-col items-center justify-center">
-                        {/* Animated Laser Scanning Beam */}
-                        <div className="w-full h-1 bg-gradient-to-r from-transparent via-brand-lime to-transparent scan-laser-line shadow-[0_0_12px_#C6F135] absolute" />
-
-                        {/* Reticle Brackets */}
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-3 border-l-3 border-brand-lime rounded-tl-lg" />
-                        <div className="absolute top-0 right-0 w-8 h-8 border-t-3 border-r-3 border-brand-lime rounded-tr-lg" />
-                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-3 border-l-3 border-brand-lime rounded-bl-lg" />
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-3 border-r-3 border-brand-lime rounded-br-lg" />
-
-                        {/* Top reticle badge */}
-                        <div className="absolute -top-3 px-3 py-0.5 rounded-full bg-brand-ink border border-white/40 text-brand-lime font-mono font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow">
-                          <span className="w-1.5 h-1.5 rounded-full bg-brand-lime animate-ping" />
-                          <span>ALIGN QR PASS HERE</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Camera Corner Quick Toggles */}
-                    <div className="absolute top-3 inset-x-3 flex items-center justify-between z-10 pointer-events-auto">
-                      <button
-                        onClick={toggleCamera}
-                        className="p-2.5 rounded-xl bg-white/90 hover:bg-white text-brand-ink border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer"
-                        title="Switch Camera (Front/Back)"
-                      >
-                        <RotateCw className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={toggleTorch}
-                        className={`p-2.5 rounded-xl border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer ${
-                          torchOn ? "bg-amber-300 text-brand-ink" : "bg-white/90 hover:bg-white text-brand-ink"
-                        }`}
-                        title={torchOn ? "Torch On" : "Torch Off"}
-                      >
-                        <Flashlight className="w-4 h-4" />
-                      </button>
                     </div>
-                  </>
-                )}
+                  )}
+                </div>
 
-                {/* IDLE CAMERA STATE */}
-                {!scannerRunning && (
-                  <div className="absolute inset-0 bg-zinc-900 flex flex-col items-center justify-center p-6 text-center space-y-3 z-10">
-                    <div className="w-16 h-16 rounded-2xl bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center text-brand-lime shadow-inner">
-                      <Camera className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 className="font-display text-2xl font-black uppercase text-white tracking-wide">
-                        SCANNER STANDBY
-                      </h3>
-                      <p className="text-xs text-zinc-400 mt-1 max-w-[220px]">
-                        Press the button below to turn on the camera for attendee QR verification.
-                      </p>
-                    </div>
+                {cameraError && (
+                  <div className="mt-4 p-3 rounded-xl bg-red-50 border-2 border-red-500 text-red-700 text-xs font-bold w-full text-center max-w-sm">
+                    {cameraError}
                   </div>
                 )}
-              </div>
 
-              {cameraError && (
-                <div className="mt-4 p-3 rounded-xl bg-red-50 border-2 border-red-500 text-red-700 text-xs font-bold w-full text-center max-w-sm">
-                  {cameraError}
+                {/* Viewfinder Main Tactical Buttons */}
+                <div className="mt-6 w-full max-w-sm grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {!scannerRunning ? (
+                    <button
+                      onClick={startScanner}
+                      className="py-3.5 px-4 rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-brand-ink font-black text-xs uppercase tracking-wide border-2 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>START SCANNER</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={stopScanner}
+                      className="py-3.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-brand-ink font-black text-xs uppercase tracking-wide border-2 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <CameraOff className="w-4 h-4" />
+                      <span>PAUSE CAMERA</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setShowManualModal(true)}
+                    className="py-3.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-brand-ink font-black text-xs uppercase tracking-wide border-2 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Keyboard className="w-4 h-4 text-brand-violet" />
+                    <span>MANUAL CODE</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveDesktopView("participants");
+                      setActiveMobileView("participants");
+                    }}
+                    className="col-span-1 sm:col-span-2 py-3 px-4 rounded-xl bg-violet-50 hover:bg-violet-100 text-brand-violet font-black text-xs uppercase tracking-wide border-2 border-brand-violet/40 shadow-[2px_2px_0px_0px_#7C3AED] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>VIEW ATTENDEES & VERIFY CODE ({participants.length})</span>
+                  </button>
                 </div>
-              )}
-
-              {/* Viewfinder Main Tactical Buttons */}
-              <div className="mt-6 w-full max-w-sm grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {!scannerRunning ? (
-                  <button
-                    onClick={startScanner}
-                    className="py-3.5 px-4 rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-brand-ink font-black text-xs uppercase tracking-wider border-2 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Camera className="w-4 h-4" />
-                    <span>START SCANNER</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={stopScanner}
-                    className="py-3.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-brand-ink font-black text-xs uppercase tracking-wider border-2 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <CameraOff className="w-4 h-4" />
-                    <span>PAUSE CAMERA</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={() => setShowManualModal(true)}
-                  className="py-3.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-brand-ink font-black text-xs uppercase tracking-wider border-2 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Keyboard className="w-4 h-4 text-brand-violet" />
-                  <span>MANUAL CODE</span>
-                </button>
               </div>
             </div>
-          </div>
 
           {/* ACTIVITY LOG & RECENT SCANS */}
           <div
@@ -1118,14 +1506,14 @@ export default function VolunteerScanStationPage() {
               {/* Header with mini statistics */}
               <div className="flex items-center justify-between border-b-2 border-zinc-200 pb-3 mb-4">
                 <div>
-                  <span className="text-xs font-display font-black uppercase tracking-wider text-brand-ink block">
+                  <span className="text-xs font-display font-black uppercase tracking-wide text-brand-ink block leading-none">
                     GATE ACTIVITY LOG
                   </span>
-                  <span className="text-[10px] font-mono text-zinc-500 font-bold">
+                  <span className="text-[10px] font-mono text-zinc-500 font-bold block mt-1">
                     {currentGateInfo?.name}
                   </span>
                 </div>
-                <div className="px-2.5 py-1 rounded-full bg-emerald-100 border border-emerald-400 text-emerald-800 text-[10px] font-mono font-black">
+                <div className="px-2.5 py-1 rounded-full bg-emerald-100 border border-emerald-400 text-emerald-800 text-[10px] font-mono font-black tracking-wider">
                   {successCount} ADMITTED
                 </div>
               </div>
@@ -1135,7 +1523,7 @@ export default function VolunteerScanStationPage() {
                 <div className="py-20 text-center text-zinc-400 text-xs font-medium space-y-2">
                   <Clock className="w-8 h-8 mx-auto text-zinc-400 stroke-1" />
                   <p className="font-bold text-zinc-500">No scans recorded yet at this gate.</p>
-                  <p className="text-[11px] text-zinc-400 max-w-xs mx-auto">
+                  <p className="text-[11px] text-zinc-400 max-w-xs mx-auto leading-relaxed">
                     Point camera at attendee QR pass or enter their 4-character code.
                   </p>
                 </div>
@@ -1170,10 +1558,10 @@ export default function VolunteerScanStationPage() {
                         </div>
 
                         <div className="truncate">
-                          <span className="font-bold text-brand-ink block truncate text-xs">
+                          <span className="font-bold text-brand-ink block truncate text-xs leading-snug">
                             {scan.attendee?.fullName || scan.title}
                           </span>
-                          <span className="text-[10px] text-zinc-600 block truncate">
+                          <span className="text-[10px] text-zinc-600 block truncate mt-0.5">
                             {scan.message}
                           </span>
                         </div>
@@ -1184,7 +1572,7 @@ export default function VolunteerScanStationPage() {
                           {scan.timestamp}
                         </span>
                         {scan.shortCode && (
-                          <span className="text-[9px] font-mono font-black bg-white border border-brand-ink px-1.5 py-0.2 rounded mt-0.5 text-brand-ink">
+                          <span className="text-[9px] font-mono font-black bg-white border border-brand-ink px-1.5 py-0.5 rounded mt-0.5 text-brand-ink tracking-wider">
                             #{scan.shortCode}
                           </span>
                         )}
@@ -1202,7 +1590,7 @@ export default function VolunteerScanStationPage() {
                 </span>
                 <button
                   onClick={() => setScanHistory([])}
-                  className="text-[11px] font-bold text-zinc-500 hover:text-red-600 uppercase transition-colors cursor-pointer"
+                  className="text-[11px] font-bold text-zinc-500 hover:text-red-600 uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   CLEAR LOG
                 </button>
@@ -1210,6 +1598,468 @@ export default function VolunteerScanStationPage() {
             )}
           </div>
         </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* 3B. FALLBACK DESK: EVENT PARTICIPANTS & MANUAL CODE VERIFIER       */}
+        {/* =================================================================== */}
+        {(activeDesktopView === "participants" || activeMobileView === "participants") && (
+          <div className="space-y-6">
+            {/* Header & Quick Navigation Bar */}
+            <div className="bg-white rounded-3xl border-3 border-brand-ink p-5 sm:p-6 shadow-[6px_6px_0px_0px_#0A0A0A] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-3.5 h-3.5 rounded-full border border-brand-ink"
+                    style={{ backgroundColor: currentGateInfo.color }}
+                  />
+                  <span className="text-[10px] font-mono font-black uppercase tracking-widest text-brand-violet bg-violet-50 border border-violet-200 px-2.5 py-0.5 rounded-full">
+                    DOOR FALLBACK DESK
+                  </span>
+                  {isGateRestricted && (
+                    <span className="text-[10px] font-mono font-black uppercase tracking-wider text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-amber-700" />
+                      LOCKED TO YOUR TRACK
+                    </span>
+                  )}
+                </div>
+                <h2 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-wide text-brand-ink mt-1 leading-snug">
+                  {currentGateInfo.name} ATTENDEES ROSTER
+                </h2>
+                <p className="text-xs text-zinc-600 font-medium leading-relaxed mt-1">
+                  Verify participant credentials manually if camera QR scanning fails. Search by name, phone, email, or 4-digit pass code.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDesktopView("viewfinder");
+                    setActiveMobileView("scanner");
+                  }}
+                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-brand-ink font-black text-xs uppercase tracking-wide border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>BACK TO CAMERA</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fetchParticipants(selectedGate)}
+                  disabled={isLoadingParticipants}
+                  className="py-2.5 px-4 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-brand-ink font-black text-xs uppercase tracking-wide border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50 transition-all flex items-center gap-2 cursor-pointer"
+                  title="Refresh attendee list"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingParticipants ? "animate-spin" : ""}`} />
+                  <span>REFRESH</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Live Counts Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-white rounded-2xl border-2 border-brand-ink p-4 shadow-[3px_3px_0px_0px_#0A0A0A] flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono uppercase font-bold text-zinc-500 block tracking-wider">TOTAL REGISTERED</span>
+                  <span className="font-display text-2xl sm:text-3xl font-black text-brand-ink tracking-wide block mt-0.5">{participants.length}</span>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-zinc-100 border border-zinc-300 flex items-center justify-center text-zinc-700">
+                  <Users className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border-2 border-brand-ink p-4 shadow-[3px_3px_0px_0px_#0A0A0A] flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono uppercase font-bold text-emerald-600 block tracking-wider">CONFIRMED AT GATE</span>
+                  <span className="font-display text-2xl sm:text-3xl font-black text-emerald-700 tracking-wide block mt-0.5">{checkedInCount}</span>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border-2 border-brand-ink p-4 shadow-[3px_3px_0px_0px_#0A0A0A] flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono uppercase font-bold text-amber-600 block tracking-wider">PENDING ARRIVAL</span>
+                  <span className="font-display text-2xl sm:text-3xl font-black text-amber-700 tracking-wide block mt-0.5">{pendingCount}</span>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800">
+                  <Clock className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick 4-Digit Pass Code Entry Box */}
+            <div className="bg-white rounded-3xl border-3 border-brand-ink p-5 sm:p-6 shadow-[6px_6px_0px_0px_#0A0A0A] space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-b-2 border-zinc-200 pb-3">
+                <div className="flex items-center gap-2">
+                  <Keyboard className="w-5 h-5 text-brand-violet" />
+                  <span className="font-display text-lg font-black uppercase text-brand-ink tracking-wide leading-none">
+                    DIRECT PASS CODE VERIFIER
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider">
+                  PUNCH 4-CHAR CODE UNDER QR CODE
+                </span>
+              </div>
+
+              <form onSubmit={handleDirectCodeSubmit} className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    maxLength={4}
+                    value={directCodeInput}
+                    onChange={(e) => setDirectCodeInput(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
+                    placeholder="ENTER 4 CHARS (E.G. 8E4B)"
+                    className="w-full py-3.5 px-4 rounded-xl bg-[#F8F8FA] border-2 border-brand-ink text-brand-ink font-mono font-black text-lg tracking-[0.25em] uppercase placeholder:text-zinc-400 placeholder:text-sm placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:bg-white focus:outline-none focus:border-brand-violet transition-colors shadow-inner"
+                  />
+                  {directCodeInput && (
+                    <button
+                      type="button"
+                      onClick={() => setDirectCodeInput("")}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-brand-ink text-xs font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={directCodeInput.trim().length !== 4 || isDirectCodeAdmitting}
+                  className="py-3.5 px-6 rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-brand-ink font-black text-xs uppercase tracking-wide border-2 border-brand-ink shadow-[4px_4px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] disabled:opacity-40 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isDirectCodeAdmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>CHECKING...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="w-4 h-4" />
+                      <span>VERIFY & ADMIT</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Direct Code Feedback Message */}
+              {directCodeFeedback && (
+                <div
+                  className={`p-3.5 rounded-xl border-2 text-xs font-bold flex items-center justify-between gap-2 animate-in fade-in ${
+                    directCodeFeedback.type === "success"
+                      ? "bg-emerald-50 border-emerald-500 text-emerald-900"
+                      : "bg-red-50 border-red-500 text-red-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {directCodeFeedback.type === "success" ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                    )}
+                    <span>{directCodeFeedback.message}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDirectCodeFeedback(null)}
+                    className="text-zinc-500 hover:text-brand-ink text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="bg-white rounded-3xl border-3 border-brand-ink p-5 sm:p-6 shadow-[6px_6px_0px_0px_#0A0A0A] space-y-4">
+              <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+                {/* Search Input */}
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={participantSearch}
+                    onChange={(e) => setParticipantSearch(e.target.value)}
+                    placeholder="Search by 4-digit code, attendee name, email, phone, team..."
+                    className="w-full py-2.5 pl-10 pr-9 rounded-xl bg-[#F8F8FA] border-2 border-brand-ink text-brand-ink text-xs font-bold placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:border-brand-violet transition-colors"
+                  />
+                  {participantSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setParticipantSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-brand-ink text-xs font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Status Filter Tabs & Expand Toggle */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-zinc-100 p-1 rounded-xl border border-zinc-300">
+                    <button
+                      type="button"
+                      onClick={() => setParticipantFilter("all")}
+                      className={`py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wide transition-all cursor-pointer ${
+                        participantFilter === "all"
+                          ? "bg-brand-ink text-white shadow-xs"
+                          : "text-zinc-600 hover:text-brand-ink"
+                      }`}
+                    >
+                      ALL ({participants.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setParticipantFilter("pending")}
+                      className={`py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wide transition-all cursor-pointer ${
+                        participantFilter === "pending"
+                          ? "bg-amber-400 text-brand-ink shadow-xs"
+                          : "text-zinc-600 hover:text-brand-ink"
+                      }`}
+                    >
+                      PENDING ({pendingCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setParticipantFilter("checked_in")}
+                      className={`py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wide transition-all cursor-pointer ${
+                        participantFilter === "checked_in"
+                          ? "bg-emerald-500 text-white shadow-xs"
+                          : "text-zinc-600 hover:text-brand-ink"
+                      }`}
+                    >
+                      ADMITTED ({checkedInCount})
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setRosterExpanded(!rosterExpanded)}
+                    className="py-1.5 px-3 rounded-xl bg-white hover:bg-zinc-100 border-2 border-brand-ink text-xs font-mono font-black uppercase tracking-wider text-brand-ink flex items-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                    title={rosterExpanded ? "Switch to scroll box" : "Expand full page (no internal scroll)"}
+                  >
+                    {rosterExpanded ? (
+                      <>
+                        <Minimize2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">COMPACT BOX</span>
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">EXPAND ALL</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Notice if fetch failed */}
+              {participantsError && (
+                <div className="p-3.5 rounded-xl bg-red-50 border-2 border-red-500 text-red-800 text-xs font-bold flex items-center justify-between">
+                  <span>{participantsError}</span>
+                  <button
+                    type="button"
+                    onClick={() => fetchParticipants(selectedGate)}
+                    className="underline hover:text-red-900 cursor-pointer"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Roster List / Cards */}
+              {isLoadingParticipants ? (
+                <div className="py-16 text-center space-y-3">
+                  <RefreshCw className="w-8 h-8 mx-auto text-brand-violet animate-spin" />
+                  <p className="font-bold text-zinc-500 text-xs uppercase tracking-wider">
+                    Loading {currentGateInfo.name} participants...
+                  </p>
+                </div>
+              ) : filteredParticipants.length === 0 ? (
+                <div className="py-16 text-center text-zinc-400 text-xs space-y-2">
+                  <Users className="w-8 h-8 mx-auto text-zinc-300" />
+                  <p className="font-bold text-zinc-600 text-sm">No attendees found</p>
+                  <p className="text-[11px] text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                    {participantSearch
+                      ? `No results matching "${participantSearch}". Try searching with fewer characters or a 4-digit code.`
+                      : `No registered participants found for ${currentGateInfo.name}.`}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div
+                    className={`relative ${
+                      rosterExpanded
+                        ? ""
+                        : "roster-scrollbar overflow-y-auto max-h-[580px] sm:max-h-[660px] pr-2 overscroll-contain focus:outline-none"
+                    }`}
+                    tabIndex={rosterExpanded ? undefined : 0}
+                    style={
+                      rosterExpanded
+                        ? undefined
+                        : {
+                            WebkitOverflowScrolling: "touch",
+                            touchAction: "pan-y",
+                          }
+                    }
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pb-6 pt-1">
+                      {filteredParticipants.map((p) => {
+                        const isCheckedIn = !!p.checkedInAt;
+                        const isAdmitting = admittingParticipantId === p.id;
+
+                        return (
+                          <div
+                            key={p.id}
+                            className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between gap-3 ${
+                              isCheckedIn
+                                ? "bg-emerald-50/60 border-emerald-400 text-emerald-950"
+                                : "bg-white hover:bg-zinc-50/80 border-brand-ink shadow-[3px_3px_0px_0px_#0A0A0A]"
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              {/* Card Header: 4-digit Code + Status Pill */}
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-mono font-black text-sm px-2.5 py-0.5 rounded-lg bg-brand-lime border-2 border-brand-ink text-brand-ink tracking-wider shadow-[1px_1px_0px_0px_#0A0A0A]">
+                                  #{p.shortCode || "N/A"}
+                                </span>
+
+                                {isCheckedIn ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-400 text-emerald-800 text-[10px] font-mono font-black uppercase tracking-wider">
+                                    <Check className="w-3 h-3 stroke-[3]" />
+                                    ADMITTED
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-400 text-amber-900 text-[10px] font-mono font-black uppercase tracking-wider">
+                                    <Clock className="w-3 h-3" />
+                                    PENDING
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Attendee Name */}
+                              <div>
+                                <h4 className="font-display text-base font-black uppercase tracking-wide text-brand-ink truncate leading-tight">
+                                  {p.fullName}
+                                </h4>
+                                {p.teamName && (
+                                  <p className="text-[11px] font-bold text-brand-violet truncate mt-1 tracking-wide">
+                                    Team: {p.teamName}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Contact Info */}
+                              <div className="text-[11px] font-mono text-zinc-600 space-y-1.5 border-t border-zinc-200/80 pt-2.5 leading-normal">
+                                {p.email && (
+                                  <p className="truncate flex items-center gap-1.5">
+                                    <Mail className="w-3 h-3 text-zinc-400 shrink-0" />
+                                    <span className="truncate">{p.email}</span>
+                                  </p>
+                                )}
+                                {p.phone && (
+                                  <p className="truncate">
+                                    📞 <span className="font-semibold">{p.phone}</span>
+                                  </p>
+                                )}
+                                {p.teamMembersNames && (
+                                  <p className="text-[10px] text-zinc-500 truncate">
+                                    Members: {p.teamMembersNames}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Check-in Timestamp & Verifier if checked in */}
+                              {isCheckedIn && (
+                                <div className="text-[10px] font-mono text-emerald-800 bg-emerald-100/70 p-2.5 rounded-xl border border-emerald-300 space-y-1 leading-normal">
+                                  <div>
+                                    Entry at:{" "}
+                                    <strong>
+                                      {new Date(p.checkedInAt).toLocaleTimeString("en-US", {
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      })}
+                                    </strong>
+                                  </div>
+                                  {p.checkedInBy && (
+                                    <div className="truncate">
+                                      Verified by: <strong>{p.checkedInBy}</strong>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="pt-2 border-t border-zinc-200/80 flex items-center justify-between gap-2">
+                              {!isCheckedIn ? (
+                                <button
+                                  type="button"
+                                  disabled={isAdmitting}
+                                  onClick={() => handleDirectParticipantCheckin(p)}
+                                  className="w-full py-2.5 px-3 rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-brand-ink font-black text-xs uppercase tracking-wide border-2 border-brand-ink shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                  {isAdmitting ? (
+                                    <>
+                                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                      <span>ADMITTING...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCheck className="w-3.5 h-3.5" />
+                                      <span>CONFIRM GATE ENTRY</span>
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <div className="w-full flex items-center justify-between">
+                                  <span className="text-[10px] font-mono text-emerald-700 font-bold tracking-wider">
+                                    Pass verified
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={isAdmitting}
+                                    onClick={() => handleDirectParticipantReset(p)}
+                                    className="py-1 px-2.5 rounded-lg border border-zinc-300 hover:border-red-400 bg-white hover:bg-red-50 text-zinc-600 hover:text-red-700 text-[10px] font-mono font-bold tracking-wider flex items-center gap-1 transition-colors cursor-pointer"
+                                    title="Reset check-in status"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>Undo</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Roster Bottom Status Bar & Expand Hint */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-[11px] font-mono text-zinc-500 pt-3 border-t-2 border-zinc-200 font-bold gap-2 px-1">
+                    <span>
+                      Showing <strong>{filteredParticipants.length}</strong> of <strong>{participants.length}</strong> attendees {participantFilter !== "all" ? `(${participantFilter})` : ""}
+                    </span>
+                    {!rosterExpanded && filteredParticipants.length > 4 && (
+                      <button
+                        type="button"
+                        onClick={() => setRosterExpanded(true)}
+                        className="text-brand-violet hover:underline flex items-center gap-1 cursor-pointer font-black self-start sm:self-auto"
+                      >
+                        <span>Show all on full page (disable scroll box)</span>
+                        <Maximize2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* ===================================================================== */}
@@ -1231,17 +2081,17 @@ export default function VolunteerScanStationPage() {
             </div>
 
             <div className="space-y-1">
-              <h3 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-tight text-brand-ink">
+              <h3 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-wide text-brand-ink leading-tight">
                 ENTER 4-CHAR PASS CODE
               </h3>
-              <p className="text-xs text-zinc-600 font-medium leading-relaxed">
+              <p className="text-xs text-zinc-600 font-medium leading-relaxed mt-1">
                 Type the 4-character ticket code shown directly underneath the QR pass on the attendee&apos;s device:
               </p>
             </div>
 
             {/* Current Arena Gate Stamp */}
             <div className="bg-[#F8F8FA] rounded-2xl p-3 border-2 border-brand-ink flex items-center justify-between text-xs">
-              <span className="text-zinc-500 font-mono text-[10px] uppercase font-bold">
+              <span className="text-zinc-500 font-mono text-[10px] uppercase font-bold tracking-wider">
                 ADMITTING TO:
               </span>
               <span className="font-black text-brand-ink uppercase text-[11px] flex items-center gap-2">
@@ -1287,10 +2137,10 @@ export default function VolunteerScanStationPage() {
                   placeholder="TYPE 4 CHARS"
                   value={manualTokenInput}
                   onChange={handleManualInputChange}
-                  className="w-full text-center py-3.5 px-4 rounded-xl bg-white border-2 border-brand-ink focus:border-brand-violet text-brand-ink text-base font-mono font-black tracking-widest uppercase placeholder:text-zinc-400 focus:outline-none transition-colors mt-2 shadow-[2px_2px_0px_0px_#0A0A0A]"
+                  className="w-full text-center py-3.5 px-4 rounded-xl bg-white border-2 border-brand-ink focus:border-brand-violet text-brand-ink text-base font-mono font-black tracking-[0.25em] uppercase placeholder:text-zinc-400 placeholder:tracking-normal focus:outline-none transition-colors mt-2 shadow-[2px_2px_0px_0px_#0A0A0A]"
                 />
 
-                <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500 px-1 font-bold">
+                <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500 px-1 font-bold tracking-wide">
                   <span>Fast Gate Code</span>
                   <span className={manualTokenInput.length === 4 ? "text-brand-violet font-black" : ""}>
                     {manualTokenInput.length} of 4 characters entered
@@ -1302,14 +2152,14 @@ export default function VolunteerScanStationPage() {
                 <button
                   type="button"
                   onClick={() => setShowManualModal(false)}
-                  className="flex-1 py-3.5 rounded-xl border-2 border-brand-ink bg-white hover:bg-zinc-100 text-xs font-black uppercase transition-colors cursor-pointer"
+                  className="flex-1 py-3.5 rounded-xl border-2 border-brand-ink bg-white hover:bg-zinc-100 text-xs font-black uppercase tracking-wide transition-colors cursor-pointer"
                 >
                   CANCEL
                 </button>
                 <button
                   type="submit"
                   disabled={manualTokenInput.trim().length !== 4 || isProcessing}
-                  className="flex-1 py-3.5 rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-brand-ink font-black text-xs uppercase tracking-wider border-2 border-brand-ink shadow-[3px_3px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] disabled:opacity-40 transition-all cursor-pointer"
+                  className="flex-1 py-3.5 rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-brand-ink font-black text-xs uppercase tracking-wide border-2 border-brand-ink shadow-[3px_3px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#0A0A0A] disabled:opacity-40 transition-all cursor-pointer"
                 >
                   VERIFY PASS
                 </button>

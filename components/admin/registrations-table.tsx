@@ -15,6 +15,8 @@ import {
   Users,
   TrendingUp,
   Layers,
+  RotateCcw,
+  Check,
 } from "lucide-react";
 
 export interface EventRegistration {
@@ -40,7 +42,10 @@ export interface EventRegistration {
 export default function RegistrationsTable({
   registrations = [],
   byEvent,
+  userEmail,
   onDeleteRegistration,
+  onCheckInRegistration,
+  onResetCheckInRegistration,
 }: {
   registrations: EventRegistration[];
   byEvent?: {
@@ -50,7 +55,10 @@ export default function RegistrationsTable({
     "entre-prenormie"?: EventRegistration[];
     "bulls-and-bears"?: EventRegistration[];
   };
+  userEmail?: string | null;
   onDeleteRegistration?: (id: string, eventSlug: string) => void;
+  onCheckInRegistration?: (registrationId: string, eventSlug: string, shortCode?: string) => Promise<void>;
+  onResetCheckInRegistration?: (registrationId: string, eventSlug: string, shortCode?: string) => Promise<void>;
 }) {
   const [activeEventTab, setActiveEventTab] = useState<string>("startup-roulette");
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,13 +66,63 @@ export default function RegistrationsTable({
   const [deleteTargetRecord, setDeleteTargetRecord] = useState<EventRegistration | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccessMsg, setDeleteSuccessMsg] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{ id: string; message: string; type: "success" | "error" } | null>(null);
 
-  // Grouped lists
-  const rouletteList = byEvent?.["startup-roulette"] || registrations.filter((r) => r.eventSlug === "startup-roulette");
-  const warRoomList = byEvent?.["the-war-room"] || registrations.filter((r) => r.eventSlug === "the-war-room");
-  const boardroomList = byEvent?.["the-boardroom"] || registrations.filter((r) => r.eventSlug === "the-boardroom");
-  const entreList = byEvent?.["entre-prenormie"] || registrations.filter((r) => r.eventSlug === "entre-prenormie");
-  const bullsList = byEvent?.["bulls-and-bears"] || registrations.filter((r) => r.eventSlug === "bulls-and-bears");
+  // Grouped lists — prefer active registrations array if provided, fallback to byEvent
+  const rouletteList = registrations.length > 0 ? registrations.filter((r) => r.eventSlug === "startup-roulette") : (byEvent?.["startup-roulette"] || []);
+  const warRoomList = registrations.length > 0 ? registrations.filter((r) => r.eventSlug === "the-war-room") : (byEvent?.["the-war-room"] || []);
+  const boardroomList = registrations.length > 0 ? registrations.filter((r) => r.eventSlug === "the-boardroom") : (byEvent?.["the-boardroom"] || []);
+  const entreList = registrations.length > 0 ? registrations.filter((r) => r.eventSlug === "entre-prenormie") : (byEvent?.["entre-prenormie"] || []);
+  const bullsList = registrations.length > 0 ? registrations.filter((r) => r.eventSlug === "bulls-and-bears") : (byEvent?.["bulls-and-bears"] || []);
+
+  const getShortPassCode = (reg: EventRegistration) => {
+    return (reg.qrToken || reg.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase();
+  };
+
+  const handleCheckIn = async (reg: EventRegistration) => {
+    if (!onCheckInRegistration) return;
+    setProcessingId(reg.id);
+    setActionFeedback(null);
+    try {
+      const code = getShortPassCode(reg);
+      await onCheckInRegistration(reg.id, reg.eventSlug, code);
+      setActionFeedback({ id: reg.id, message: `Admitted ${reg.fullName || "attendee"}!`, type: "success" });
+      if (selectedRecord && selectedRecord.id === reg.id) {
+        setSelectedRecord({
+          ...selectedRecord,
+          checkedInAt: new Date().toISOString(),
+          checkedInBy: userEmail ? `${userEmail} (Admin Fallback)` : "Admin Console",
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({ id: reg.id, message: err.message || "Failed to confirm check-in", type: "error" });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleResetCheckIn = async (reg: EventRegistration) => {
+    if (!onResetCheckInRegistration) return;
+    setProcessingId(reg.id);
+    setActionFeedback(null);
+    try {
+      const code = getShortPassCode(reg);
+      await onResetCheckInRegistration(reg.id, reg.eventSlug, code);
+      setActionFeedback({ id: reg.id, message: `Check-in reset for ${reg.fullName || "attendee"}.`, type: "success" });
+      if (selectedRecord && selectedRecord.id === reg.id) {
+        setSelectedRecord({
+          ...selectedRecord,
+          checkedInAt: null,
+          checkedInBy: null,
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({ id: reg.id, message: err.message || "Failed to reset check-in", type: "error" });
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const currentList = (() => {
     switch (activeEventTab) {
@@ -588,11 +646,39 @@ export default function RegistrationsTable({
                               by: <span className="text-zinc-800 underline decoration-zinc-300">{reg.checkedInBy}</span>
                             </div>
                           )}
+                          {onResetCheckInRegistration && (
+                            <button
+                              type="button"
+                              onClick={() => handleResetCheckIn(reg)}
+                              disabled={processingId === reg.id}
+                              className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-zinc-400 hover:text-amber-600 transition-colors mt-0.5 underline disabled:opacity-50"
+                              title="Reset entry pass status"
+                            >
+                              <RotateCcw className="w-2.5 h-2.5" />
+                              <span>{processingId === reg.id ? "Resetting..." : "Undo"}</span>
+                            </button>
+                          )}
                         </div>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-[10px] font-bold uppercase border border-zinc-200">
-                          <span>PENDING</span>
-                        </span>
+                        <div className="space-y-1.5">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-[10px] font-bold uppercase border border-zinc-200">
+                            <span>PENDING</span>
+                          </span>
+                          {onCheckInRegistration && (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => handleCheckIn(reg)}
+                                disabled={processingId === reg.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-[1px_1px_0px_0px_#0A0A0A] hover:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50"
+                                title="Confirm gate admission for attendee"
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>{processingId === reg.id ? "ADMITTING..." : "CONFIRM ENTRY"}</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="py-3.5 px-4">
@@ -737,21 +823,70 @@ export default function RegistrationsTable({
               </div>
             )}
 
-            <div className="mt-6 flex items-center justify-between gap-3 pt-4 border-t border-zinc-100">
+            {/* Action Feedback in Modal */}
+            {actionFeedback && actionFeedback.id === selectedRecord.id && (
+              <div
+                className={`mt-4 p-3 rounded-2xl border-2 text-xs font-bold flex items-center gap-2 ${
+                  actionFeedback.type === "success"
+                    ? "bg-emerald-50 border-emerald-400 text-emerald-800"
+                    : "bg-red-50 border-red-300 text-red-800"
+                }`}
+              >
+                {actionFeedback.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                )}
+                <span>{actionFeedback.message}</span>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-zinc-100">
               <button
                 onClick={() => setDeleteTargetRecord(selectedRecord)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-black text-xs uppercase tracking-wider transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-black text-xs uppercase tracking-wider transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>REMOVE FROM DB</span>
               </button>
 
-              <button
-                onClick={() => setSelectedRecord(null)}
-                className="px-5 py-2.5 rounded-full bg-brand-ink text-white font-black text-xs uppercase"
-              >
-                CLOSE
-              </button>
+              <div className="flex items-center gap-2 justify-end">
+                {selectedRecord.checkedInAt ? (
+                  onResetCheckInRegistration && (
+                    <button
+                      type="button"
+                      onClick={() => handleResetCheckIn(selectedRecord)}
+                      disabled={processingId === selectedRecord.id}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border-2 border-amber-300 font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>{processingId === selectedRecord.id ? "RESETTING..." : "RESET CHECK-IN"}</span>
+                    </button>
+                  )
+                ) : (
+                  onCheckInRegistration && (
+                    <button
+                      type="button"
+                      onClick={() => handleCheckIn(selectedRecord)}
+                      disabled={processingId === selectedRecord.id}
+                      className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider transition-all shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{processingId === selectedRecord.id ? "ADMITTING..." : "CONFIRM GATE ENTRY"}</span>
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => {
+                    setSelectedRecord(null);
+                    setActionFeedback(null);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-brand-ink text-white font-black text-xs uppercase tracking-wider hover:bg-zinc-800 transition-colors text-center"
+                >
+                  CLOSE
+                </button>
+              </div>
             </div>
           </div>
         </div>

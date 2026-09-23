@@ -18,7 +18,18 @@ import {
   CheckCircle2,
   Clock,
   Power,
+  KeyRound,
+  Search,
+  ShieldCheck,
+  AlertCircle,
+  RotateCcw,
+  Check,
+  X,
+  UserCheck,
+  QrCode,
+  FileCheck2,
 } from "lucide-react";
+import confetti from "canvas-confetti";
 import RegistrationsTable from "./registrations-table";
 import StallManager from "./stall-manager";
 import SettingsForm from "./settings-form";
@@ -43,6 +54,22 @@ export default function AdminDashboard({
   const [activeTab, setActiveTab] = useState<"overview" | "registrations" | "events" | "sponsors" | "stalls" | "settings">("overview");
   const [eventsList, setEventsList] = useState<EventItem[]>(EVENTS_DATA);
   const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
+
+  // Live registrations state
+  const [registrations, setRegistrations] = useState<any[]>(initialRegistrations);
+
+  useEffect(() => {
+    setRegistrations(initialRegistrations);
+  }, [initialRegistrations]);
+
+  // Fallback Entry Verifier State
+  const [fallbackInput, setFallbackInput] = useState("");
+  const [fallbackGateSlug, setFallbackGateSlug] = useState("any");
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isConfirmingEntry, setIsConfirmingEntry] = useState(false);
+  const [fallbackResult, setFallbackResult] = useState<any | null>(null);
+  const [fallbackError, setFallbackError] = useState<string | null>(null);
+  const [fallbackSuccess, setFallbackSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -82,17 +109,172 @@ export default function AdminDashboard({
     }
   };
 
+  // Fallback code inspection & verification
+  const handleVerifyCode = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const clean = fallbackInput.trim();
+    if (!clean) return;
+
+    setIsVerifyingCode(true);
+    setFallbackError(null);
+    setFallbackSuccess(null);
+    setFallbackResult(null);
+
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          qrToken: clean,
+          gateEventSlug: fallbackGateSlug,
+          action: "lookup",
+          adminOverride: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "No matching registration found");
+      }
+      setFallbackResult(data);
+    } catch (err: any) {
+      setFallbackError(err.message || "Failed to find registration");
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
+
+  // Confirm participant entry as admin
+  const handleConfirmEntry = async (registrationId?: string, eventSlug?: string, shortCode?: string) => {
+    const codeToUse = shortCode || registrationId || fallbackResult?.shortCode || fallbackInput.trim();
+    const targetSlug = eventSlug || fallbackResult?.eventSlug || "any";
+
+    setIsConfirmingEntry(true);
+    setFallbackError(null);
+
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          qrToken: codeToUse,
+          registrationId: registrationId || fallbackResult?.registrationId,
+          gateEventSlug: targetSlug,
+          adminOverride: true,
+          volunteerEmail: userEmail ? `${userEmail} (Admin Fallback)` : "Admin Console",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to confirm check-in");
+      }
+
+      // Success! Update local registrations
+      const timestamp = data.checkedInAt || new Date().toISOString();
+      const verifier = data.checkedInBy || (userEmail ? `${userEmail} (Admin Fallback)` : "Admin Console");
+      const matchedId = registrationId || data.registrationId || fallbackResult?.registrationId;
+
+      setRegistrations((prev) =>
+        prev.map((r) =>
+          (matchedId && r.id === matchedId) ||
+          (r.qrToken && r.qrToken === codeToUse) ||
+          ((r.qrToken || r.id).replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase() === codeToUse.toUpperCase())
+            ? { ...r, checkedInAt: timestamp, checkedInBy: verifier }
+            : r
+        )
+      );
+
+      if (fallbackResult) {
+        setFallbackResult((prev: any) => ({
+          ...prev,
+          isAlreadyCheckedIn: true,
+          checkedInAt: timestamp,
+          checkedInBy: verifier,
+        }));
+      }
+
+      setFallbackSuccess(
+        `Entry confirmed for ${data.attendee?.fullName || "Attendee"} (${data.event || targetSlug.toUpperCase()})!`
+      );
+
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ["#7C3AED", "#C6F135", "#10B981", "#FF5A36", "#0A0A0A"],
+        });
+      } catch {
+        // ignore
+      }
+    } catch (err: any) {
+      setFallbackError(err.message || "Failed to confirm entry");
+      throw err;
+    } finally {
+      setIsConfirmingEntry(false);
+    }
+  };
+
+  // Reset participant check-in (undo)
+  const handleResetEntry = async (registrationId: string, eventSlug: string, shortCode?: string) => {
+    setIsConfirmingEntry(true);
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          qrToken: shortCode || registrationId,
+          registrationId,
+          gateEventSlug: eventSlug,
+          action: "reset",
+          adminOverride: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to reset check-in");
+      }
+
+      setRegistrations((prev) =>
+        prev.map((r) =>
+          r.id === registrationId ? { ...r, checkedInAt: null, checkedInBy: null } : r
+        )
+      );
+
+      if (fallbackResult) {
+        setFallbackResult((prev: any) => ({
+          ...prev,
+          isAlreadyCheckedIn: false,
+          checkedInAt: null,
+          checkedInBy: null,
+        }));
+      }
+      setFallbackSuccess(`Check-in reset for ${data.attendee?.fullName || "Attendee"}.`);
+    } catch (err: any) {
+      setFallbackError(err.message || "Failed to reset check-in");
+      throw err;
+    } finally {
+      setIsConfirmingEntry(false);
+    }
+  };
+
+  const handleDeleteRegistration = (id: string, eventSlug: string) => {
+    setRegistrations((prev) => prev.filter((r) => r.id !== id));
+    if (onDeleteRegistration) {
+      onDeleteRegistration(id, eventSlug);
+    }
+  };
+
   // Calculations
-  const totalRegistrations = initialRegistrations.length;
-  const checkedInRegistrations = initialRegistrations
+  const totalRegistrations = registrations.length;
+  const checkedInRegistrations = registrations
     .filter((r) => r.checkedInAt)
     .sort((a, b) => new Date(b.checkedInAt).getTime() - new Date(a.checkedInAt).getTime());
-  const rouletteCount = byEvent?.["startup-roulette"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "startup-roulette" || r.selectedEvents?.includes("startup-roulette")).length;
-  const warRoomCount = byEvent?.["the-war-room"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "the-war-room" || r.selectedEvents?.includes("the-war-room")).length;
-  const boardroomCount = byEvent?.["the-boardroom"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "the-boardroom" || r.selectedEvents?.includes("the-boardroom")).length;
-  const entreprenormieCount = byEvent?.["entre-prenormie"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "entre-prenormie" || r.selectedEvents?.includes("entre-prenormie")).length;
-  const bullsCount = byEvent?.["bulls-and-bears"]?.length ?? initialRegistrations.filter((r) => r.eventSlug === "bulls-and-bears" || r.selectedEvents?.includes("bulls-and-bears")).length;
-  const bayAreaCount = initialRegistrations.filter((r) => r.selectedEvents?.includes("bay-area")).length;
+  const rouletteCount = byEvent?.["startup-roulette"]?.length ?? registrations.filter((r) => r.eventSlug === "startup-roulette" || r.selectedEvents?.includes("startup-roulette")).length;
+  const warRoomCount = byEvent?.["the-war-room"]?.length ?? registrations.filter((r) => r.eventSlug === "the-war-room" || r.selectedEvents?.includes("the-war-room")).length;
+  const boardroomCount = byEvent?.["the-boardroom"]?.length ?? registrations.filter((r) => r.eventSlug === "the-boardroom" || r.selectedEvents?.includes("the-boardroom")).length;
+  const entreprenormieCount = byEvent?.["entre-prenormie"]?.length ?? registrations.filter((r) => r.eventSlug === "entre-prenormie" || r.selectedEvents?.includes("entre-prenormie")).length;
+  const bullsCount = byEvent?.["bulls-and-bears"]?.length ?? registrations.filter((r) => r.eventSlug === "bulls-and-bears" || r.selectedEvents?.includes("bulls-and-bears")).length;
+  const bayAreaCount = registrations.filter((r) => r.selectedEvents?.includes("bay-area")).length;
 
   const getEventCount = (slug: string) => {
     switch (slug) {
@@ -102,7 +284,7 @@ export default function AdminDashboard({
       case "entre-prenormie": return entreprenormieCount;
       case "bulls-and-bears": return bullsCount;
       case "bay-area": return bayAreaCount;
-      default: return initialRegistrations.filter(r => r.eventSlug === slug || r.selectedEvents?.includes(slug)).length;
+      default: return registrations.filter(r => r.eventSlug === slug || r.selectedEvents?.includes(slug)).length;
     }
   };
 
@@ -139,6 +321,24 @@ export default function AdminDashboard({
                 {userEmail}
               </span>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("overview");
+                setTimeout(() => {
+                  const desk = document.getElementById("admin-fallback-desk");
+                  if (desk) desk.scrollIntoView({ behavior: "smooth" });
+                  const inp = document.getElementById("admin-fallback-input");
+                  if (inp) inp.focus();
+                }, 100);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-surface border-2 border-brand-ink text-brand-ink text-xs font-black uppercase hover:bg-brand-ink hover:text-white transition-colors shadow-xs"
+              title="Verify 4-char attendee code or email fallback"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-brand-violet" />
+              <span>VERIFY CODE</span>
+            </button>
 
             <Link
               href="/vol/scan"
@@ -271,6 +471,226 @@ export default function AdminDashboard({
                 <span>OPEN SCAN STATION</span>
                 <ArrowUpRight className="w-4 h-4" />
               </Link>
+            </div>
+
+            {/* ADMIN FALLBACK: MANUAL ENTRY DESK & CODE VERIFIER */}
+            <div id="admin-fallback-desk" className="bg-white rounded-3xl border-2 border-brand-ink p-6 sm:p-8 shadow-[4px_4px_0px_0px_#0A0A0A] space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-brand-violet text-white flex items-center justify-center shadow-md">
+                    <KeyRound className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-brand-violet bg-brand-violet/10 px-2 py-0.5 rounded">
+                        ADMIN FALLBACK ENTRY DESK
+                      </span>
+                      <span className="text-[10px] font-bold uppercase text-zinc-400">
+                        OFFLINE / CAMERA FAILOVER
+                      </span>
+                    </div>
+                    <h3 className="font-display text-xl sm:text-2xl font-black uppercase text-brand-ink">
+                      VERIFY ATTENDEE CODE & CONFIRM ENTRY
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="text-xs text-zinc-500 font-medium max-w-sm text-left sm:text-right">
+                  Enter 4-character pass code, attendee email, or full UUID to inspect attendee specs and admit them directly.
+                </div>
+              </div>
+
+              {/* Input Form Bar */}
+              <form onSubmit={handleVerifyCode} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="sm:w-56 shrink-0">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-zinc-500 mb-1">
+                    TRACK SCOPE
+                  </label>
+                  <select
+                    value={fallbackGateSlug}
+                    onChange={(e) => setFallbackGateSlug(e.target.value)}
+                    className="w-full px-3.5 py-3 rounded-xl border-2 border-brand-ink bg-zinc-50 text-xs font-bold uppercase text-brand-ink focus:outline-none focus:ring-2 focus:ring-brand-violet shadow-xs"
+                  >
+                    <option value="any">⚡ All 5 Tracks (Auto-Detect)</option>
+                    <option value="startup-roulette">Startup Roulette</option>
+                    <option value="the-war-room">The War Room</option>
+                    <option value="the-boardroom">The Boardroom</option>
+                    <option value="entre-prenormie">Entrepre-Normie</option>
+                    <option value="bulls-and-bears">Bulls & Bears</option>
+                  </select>
+                </div>
+
+                <div className="flex-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-zinc-500 mb-1">
+                    PASS CODE, ATTENDEE EMAIL, OR UUID
+                  </label>
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      id="admin-fallback-input"
+                      type="text"
+                      value={fallbackInput}
+                      onChange={(e) => setFallbackInput(e.target.value)}
+                      placeholder="e.g. 8E4B, name@gmail.com, or scan URL"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-brand-ink bg-white font-mono text-sm uppercase font-bold tracking-wider text-brand-ink placeholder:font-sans placeholder:normal-case placeholder:font-medium placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-violet shadow-xs"
+                    />
+                    {fallbackInput && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFallbackInput("");
+                          setFallbackResult(null);
+                          setFallbackError(null);
+                          setFallbackSuccess(null);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-brand-ink"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="sm:self-end">
+                  <button
+                    type="submit"
+                    disabled={isVerifyingCode || !fallbackInput.trim()}
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-brand-ink hover:bg-brand-violet text-white text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:pointer-events-none shadow-[2px_2px_0px_0px_#7C3AED] active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    {isVerifyingCode ? "SEARCHING DB..." : "VERIFY & INSPECT"}
+                  </button>
+                </div>
+              </form>
+
+              {/* Feedback messages */}
+              {fallbackError && (
+                <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 text-xs font-bold flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{fallbackError}</span>
+                  </div>
+                  <button
+                    onClick={() => setFallbackError(null)}
+                    className="text-[10px] uppercase font-black opacity-60 hover:opacity-100"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              {fallbackSuccess && (
+                <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-900 text-xs font-bold flex items-center justify-between gap-3 animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{fallbackSuccess}</span>
+                  </div>
+                  <button
+                    onClick={() => setFallbackSuccess(null)}
+                    className="text-[10px] uppercase font-black opacity-60 hover:opacity-100"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              {/* Verification Result Card */}
+              {fallbackResult && (
+                <div className="p-5 sm:p-6 rounded-2xl border-2 border-brand-ink bg-brand-surface space-y-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-zinc-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-brand-ink text-brand-lime flex items-center justify-center font-mono font-black text-lg border-2 border-brand-ink">
+                        {fallbackResult.shortCode || "PASS"}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="px-2.5 py-0.5 rounded-full bg-brand-violet text-white text-[10px] font-black uppercase tracking-wider">
+                            {fallbackResult.event}
+                          </span>
+                          <span className="font-mono text-[11px] font-bold text-zinc-500">
+                            CODE: <strong>{fallbackResult.shortCode}</strong>
+                          </span>
+                        </div>
+                        <h4 className="font-display text-xl sm:text-2xl font-black uppercase text-brand-ink">
+                          {fallbackResult.attendee?.fullName}
+                        </h4>
+                      </div>
+                    </div>
+
+                    {/* Live status badge */}
+                    <div>
+                      {fallbackResult.isAlreadyCheckedIn ? (
+                        <div className="text-right">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-black uppercase tracking-wider">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>ALREADY CHECKED IN</span>
+                          </span>
+                          {fallbackResult.checkedInAt && (
+                            <div className="text-[10px] text-zinc-500 font-mono mt-1">
+                              at {new Date(fallbackResult.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              {fallbackResult.checkedInBy && ` by ${fallbackResult.checkedInBy}`}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-xs font-black uppercase tracking-wider">
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>PENDING ADMISSION</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Metadata specs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-white p-4 rounded-xl border border-zinc-200">
+                    <div>
+                      <span className="block text-[10px] font-bold text-zinc-400 uppercase">EMAIL</span>
+                      <span className="font-semibold text-brand-ink">{fallbackResult.attendee?.email || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-zinc-400 uppercase">PHONE</span>
+                      <span className="font-semibold text-brand-ink font-mono">{fallbackResult.attendee?.phone || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-zinc-400 uppercase">TEAM / ROSTER</span>
+                      <span className="font-semibold text-brand-ink">
+                        {fallbackResult.attendee?.teamName || fallbackResult.attendee?.teamMembersNames || fallbackResult.attendee?.partnerName || "Individual Participant"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                    <span className="text-[11px] text-zinc-500 font-medium">
+                      {fallbackResult.isAlreadyCheckedIn
+                        ? "Participant has already presented pass at gate."
+                        : "Verify physical ID matches attendee details before confirming."}
+                    </span>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      {fallbackResult.isAlreadyCheckedIn ? (
+                        <button
+                          type="button"
+                          disabled={isConfirmingEntry}
+                          onClick={() => handleResetEntry(fallbackResult.registrationId, fallbackResult.eventSlug, fallbackResult.shortCode)}
+                          className="w-full sm:w-auto px-4 py-2 rounded-xl border-2 border-red-300 text-red-700 hover:bg-red-50 text-xs font-black uppercase tracking-wider transition-colors disabled:opacity-50"
+                        >
+                          {isConfirmingEntry ? "Resetting..." : "Reset Check-in (Undo)"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isConfirmingEntry}
+                          onClick={() => handleConfirmEntry(fallbackResult.registrationId, fallbackResult.eventSlug, fallbackResult.shortCode)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_#0A0A0A] active:translate-x-0.5 active:translate-y-0.5 transition-all disabled:opacity-50"
+                        >
+                          <ShieldCheck className="w-4 h-4 text-brand-lime" />
+                          <span>{isConfirmingEntry ? "CONFIRMING..." : "CONFIRM GATE ENTRY"}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Top KPI row */}
@@ -505,9 +925,12 @@ export default function AdminDashboard({
 
         {activeTab === "registrations" && (
           <RegistrationsTable
-            registrations={initialRegistrations}
+            registrations={registrations}
             byEvent={byEvent}
-            onDeleteRegistration={onDeleteRegistration}
+            userEmail={userEmail}
+            onDeleteRegistration={handleDeleteRegistration}
+            onCheckInRegistration={handleConfirmEntry}
+            onResetCheckInRegistration={handleResetEntry}
           />
         )}
 
