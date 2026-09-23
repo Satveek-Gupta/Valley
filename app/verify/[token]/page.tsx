@@ -43,11 +43,14 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
     for (const item of eventTableLookups) {
       try {
         if (isShortCode) {
-          const { data: rows } = await supabaseAdmin
+          const { data: rows, error: queryErr } = await supabaseAdmin
             .from(item.table)
-            .select("id, qr_token, full_name, email, team_name, team_leader_name, team_members_names, partner_name, checked_in_at")
-            .order("created_at", { ascending: false })
-            .limit(300);
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (queryErr) {
+            console.error(`Error querying ${item.table} for shortCode:`, queryErr);
+          }
 
           if (rows && rows.length > 0) {
             const match = rows.find((r: any) => {
