@@ -290,12 +290,14 @@ async function fetchParticipantRegistrations(cleanEmail: string) {
   // 2. BAY AREA STALLS: Query stalls table (NO QR, NO GATE CHECK-IN)
   // =========================================================================
   try {
-    const { data: stalls } = await db
-      .from("stalls")
-      .select("*")
-      .or(`contact_person.ilike.%${cleanEmail}%,business_name.ilike.%${cleanEmail}%`);
+    const safeEmail = cleanEmail.replace(/[^a-zA-Z0-9@._+-]/g, "");
+    if (safeEmail) {
+      const { data: stalls } = await db
+        .from("stalls")
+        .select("*")
+        .or(`contact_person.ilike.%${safeEmail}%,business_name.ilike.%${safeEmail}%`);
 
-    if (stalls && stalls.length > 0) {
+      if (stalls && stalls.length > 0) {
       processedSlugs.add("bay-area");
       for (const st of stalls) {
         if (!attendeeFullName && st.contact_person) {
@@ -321,6 +323,7 @@ async function fetchParticipantRegistrations(cleanEmail: string) {
           createdAt: st.created_at,
         });
       }
+    }
     }
   } catch (stallErr) {
     console.warn("Error querying stalls table:", stallErr);

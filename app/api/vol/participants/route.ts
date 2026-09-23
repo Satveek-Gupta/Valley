@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 import { getRestrictedEventSlug, getEventNameFromSlug } from "@/lib/volunteer-gates";
+import { verifyAuth } from "@/lib/auth-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -20,26 +21,36 @@ function getShortCode(val: string | null | undefined): string {
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth || (!auth.isVolunteer && !auth.isAdmin)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "UNAUTHORIZED",
+          error: "Authentication required. Gate volunteer or administrator access required.",
+        },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
-    const volunteerEmail = searchParams.get("volunteerEmail")?.trim() || null;
     let targetSlug = searchParams.get("eventSlug")?.trim().toLowerCase() || "startup-roulette";
 
-    // Enforce volunteer email restriction if applicable
-    const restrictedSlug = getRestrictedEventSlug(volunteerEmail);
-    if (restrictedSlug) {
-      if (targetSlug && targetSlug !== restrictedSlug) {
+    // Enforce gate restriction strictly from verified auth session
+    if (!auth.isAdmin && auth.restrictedEventSlug) {
+      if (targetSlug && targetSlug !== auth.restrictedEventSlug) {
         return NextResponse.json(
           {
             success: false,
             code: "RESTRICTED_ACCESS",
-            error: `Your volunteer account (${volunteerEmail}) is restricted to ${getEventNameFromSlug(
-              restrictedSlug
+            error: `Your volunteer account (${auth.email}) is restricted to ${getEventNameFromSlug(
+              auth.restrictedEventSlug
             )} only.`,
           },
           { status: 403 }
         );
       }
-      targetSlug = restrictedSlug;
+      targetSlug = auth.restrictedEventSlug;
     }
 
     const tableName = EVENT_TABLES[targetSlug];

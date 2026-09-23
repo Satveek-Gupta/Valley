@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { verifyAuth } from "@/lib/auth-server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,6 +31,23 @@ export async function POST(req: NextRequest) {
         role: "admin",
         email,
       });
+    }
+
+    // Production mode: Verify Supabase JWT Bearer session
+    const auth = await verifyAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { authorized: false, error: "Authentication required. Please sign in." },
+        { status: 401 }
+      );
+    }
+
+    // Ensure session email matches checked email
+    if (auth.email.toLowerCase() !== email) {
+      return NextResponse.json(
+        { authorized: false, error: "Session identity mismatch." },
+        { status: 403 }
+      );
     }
 
     // Query the admins table using the service role client (bypasses RLS safely)

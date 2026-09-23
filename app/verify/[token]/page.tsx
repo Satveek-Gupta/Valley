@@ -24,6 +24,7 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
   }
 
   const cleanToken = token.trim().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  const safeToken = token.trim().replace(/[^a-zA-Z0-9-_]/g, "");
   const isShortCode = cleanToken.length > 0 && cleanToken.length <= 4;
 
   let eventReg: any = null;
@@ -44,7 +45,9 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
         if (isShortCode) {
           const { data: rows } = await supabaseAdmin
             .from(item.table)
-            .select("*");
+            .select("id, qr_token, full_name, email, team_name, team_leader_name, team_members_names, partner_name, checked_in_at")
+            .order("created_at", { ascending: false })
+            .limit(300);
 
           if (rows && rows.length > 0) {
             const match = rows.find((r: any) => {
@@ -72,11 +75,11 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
               break;
             }
           }
-        } else {
+        } else if (safeToken) {
           const { data } = await supabaseAdmin
             .from(item.table)
             .select("*")
-            .or(`qr_token.eq.${token},id.eq.${token}`)
+            .or(`qr_token.eq.${safeToken},id.eq.${safeToken}`)
             .maybeSingle();
 
           if (data) {
@@ -101,28 +104,30 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
       } catch (e) {
         // Fallback: try by id only
         try {
-          const { data: byId } = await supabaseAdmin
-            .from(item.table)
-            .select("*")
-            .eq("id", token)
-            .maybeSingle();
-          if (byId) {
-            eventReg = {
-              id: byId.id,
-              qr_token: byId.qr_token || byId.id,
-              event_slug: item.slug,
-              checked_in_at: byId.checked_in_at,
-              details: {
-                teamName: byId.team_name || null,
-                teamLeaderName: byId.team_leader_name || byId.full_name,
-                teamMembersNames: byId.team_members_names || byId.partner_name || null,
-              },
-            };
-            participant = {
-              full_name: byId.full_name,
-              email: byId.email,
-            };
-            break;
+          if (safeToken) {
+            const { data: byId } = await supabaseAdmin
+              .from(item.table)
+              .select("*")
+              .eq("id", safeToken)
+              .maybeSingle();
+            if (byId) {
+              eventReg = {
+                id: byId.id,
+                qr_token: byId.qr_token || byId.id,
+                event_slug: item.slug,
+                checked_in_at: byId.checked_in_at,
+                details: {
+                  teamName: byId.team_name || null,
+                  teamLeaderName: byId.team_leader_name || byId.full_name,
+                  teamMembersNames: byId.team_members_names || byId.partner_name || null,
+                },
+              };
+              participant = {
+                full_name: byId.full_name,
+                email: byId.email,
+              };
+              break;
+            }
           }
         } catch (e2) {
           // ignore

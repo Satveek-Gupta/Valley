@@ -41,6 +41,7 @@ import confetti from "canvas-confetti";
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { getRestrictedEventSlug, getEventNameFromSlug } from "@/lib/volunteer-gates";
+import { getAuthHeaders } from "@/lib/auth-client";
 
 // 5 GATED EVENTS ONLY — Bay Area NEVER appears in gate station
 const DEFAULT_GATED_GATES = [
@@ -276,8 +277,11 @@ export default function VolunteerScanStationPage() {
       setIsLoadingParticipants(true);
       setParticipantsError(null);
       try {
+        const authHeaders = await getAuthHeaders();
         const emailParam = volunteerEmail ? `&volunteerEmail=${encodeURIComponent(volunteerEmail)}` : "";
-        const res = await fetch(`/api/vol/participants?eventSlug=${targetSlug}${emailParam}`);
+        const res = await fetch(`/api/vol/participants?eventSlug=${targetSlug}${emailParam}`, {
+          headers: { ...authHeaders },
+        });
         const data = await res.json();
         if (!res.ok || !data.success) {
           throw new Error(data.error || "Failed to load event participants");
@@ -381,9 +385,10 @@ export default function VolunteerScanStationPage() {
   const handleDirectParticipantCheckin = async (participant: any) => {
     setAdmittingParticipantId(participant.id);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/checkin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           qrToken: participant.shortCode || participant.id,
           registrationId: participant.id,
@@ -444,9 +449,10 @@ export default function VolunteerScanStationPage() {
   const handleDirectParticipantReset = async (participant: any) => {
     setAdmittingParticipantId(participant.id);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/checkin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           qrToken: participant.shortCode || participant.id,
           registrationId: participant.id,
@@ -479,9 +485,10 @@ export default function VolunteerScanStationPage() {
     setIsDirectCodeAdmitting(true);
     setDirectCodeFeedback(null);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/checkin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           qrToken: code,
           gateEventSlug: selectedGate,
@@ -571,9 +578,10 @@ export default function VolunteerScanStationPage() {
       });
 
       try {
+        const authHeaders = await getAuthHeaders();
         const res = await fetch("/api/checkin", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({
             qrToken: token,
             gateEventSlug: selectedGate,

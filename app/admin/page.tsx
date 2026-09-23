@@ -6,6 +6,7 @@ import Link from "next/link";
 import AdminDashboard from "@/components/admin/admin-dashboard";
 import { Lock, ArrowRight, Mail, KeyRound, AlertCircle, Sparkles, QrCode } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/auth-client";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -24,9 +25,10 @@ export default function AdminPage() {
   const verifyAdminRole = async (emailToCheck: string) => {
     setIsVerifyingRole(true);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/admin/auth/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ email: emailToCheck }),
       });
       const data = await res.json();
@@ -112,7 +114,10 @@ export default function AdminPage() {
 
   const fetchRegistrations = async () => {
     try {
-      const res = await fetch("/api/admin/registrations");
+      const authHeaders = await getAuthHeaders();
+      const res = await fetch("/api/admin/registrations", {
+        headers: { ...authHeaders },
+      });
       const json = await res.json();
       if (json.registrations) {
         setRegistrations(json.registrations);

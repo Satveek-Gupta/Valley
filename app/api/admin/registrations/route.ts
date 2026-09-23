@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
+import { verifyAuth } from "@/lib/auth-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (!auth || !auth.isAdmin) {
+    return NextResponse.json(
+      { total: 0, error: "Unauthorized. Administrator privileges required." },
+      { status: 401 }
+    );
+  }
+
   if (isSupabaseConfigured && supabaseAdmin) {
     try {
       const [
@@ -201,6 +210,14 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = await verifyAuth(req);
+    if (!auth || !auth.isAdmin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Administrator privileges required." },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const eventSlug = searchParams.get("eventSlug");
@@ -245,11 +262,15 @@ export async function DELETE(req: NextRequest) {
 
       // Also clean up from registration_events if any legacy record exists
       try {
-        const tokenToDelete = existingRow?.qr_token || id;
-        await supabaseAdmin
-          .from("registration_events")
-          .delete()
-          .or(`id.eq.${id},qr_token.eq.${tokenToDelete}`);
+        const rawToken = existingRow?.qr_token || id;
+        const safeId = id.replace(/[^a-zA-Z0-9-_]/g, "");
+        const safeToken = rawToken.replace(/[^a-zA-Z0-9-_]/g, "");
+        if (safeId && safeToken) {
+          await supabaseAdmin
+            .from("registration_events")
+            .delete()
+            .or(`id.eq.${safeId},qr_token.eq.${safeToken}`);
+        }
       } catch (legacyErr) {
         // ignore if table or record doesn't exist
       }
