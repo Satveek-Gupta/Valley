@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 import { EVENTS_DATA } from "@/lib/mock-data";
+import { getRestrictedEventSlug } from "@/lib/volunteer-gates";
 
 export const dynamic = "force-dynamic";
 
@@ -57,9 +58,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const rawToken = (body.qrToken || body.token || body.code || body.registrationId || "").toString().trim();
-    const gateEventSlug = body.gateEventSlug || body.eventSlug || "any";
     const volunteerEmail = body.volunteerEmail?.trim() || null;
-    const isAdminOverride = body.adminOverride === true || body.isAdmin === true || gateEventSlug === "any";
+    const restrictedSlug = getRestrictedEventSlug(volunteerEmail);
+    const isAdminOverride = (body.adminOverride === true || body.isAdmin === true) && !restrictedSlug;
+    const gateEventSlug = (restrictedSlug && !isAdminOverride)
+      ? restrictedSlug
+      : (body.gateEventSlug || body.eventSlug || "any");
     const action = body.action || body.mode || "checkin"; // "lookup" | "checkin" | "undo" | "reset"
 
     if (!rawToken && !body.registrationId) {
@@ -260,20 +264,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // CASE 2: Wrong Gate (Only strictly enforced for non-admin volunteer scans at wrong doors)
+    // CASE 2: Wrong Gate (Strictly enforced for gate volunteer accounts and mismatched event tracks)
     if (gateEventSlug && gateEventSlug !== "any" && !isAdminOverride && foundEventSlug !== gateEventSlug) {
+      const isRestrictedAccount = !!restrictedSlug;
+      const errorMsg = isRestrictedAccount
+        ? `Restricted Gate Account: You are signed in as ${gateEventName} Gate (${volunteerEmail}). This attendee has a pass for ${actualEventName}. You can only admit attendees for ${gateEventName}.`
+        : `Wrong gate — this pass is for ${actualEventName}`;
+
       return NextResponse.json(
         {
           success: false,
           code: "WRONG_GATE",
-          error: `Wrong gate — this pass is for ${actualEventName}`,
+          error: errorMsg,
           actualEvent: actualEventName,
           gateEvent: gateEventName,
+          assignedEvent: gateEventName,
           shortCode: matchedShortCode,
           attendee: attendeeInfo,
           registrationId: foundRecord.id,
         },
-        { status: 400 }
+        { status: isRestrictedAccount ? 403 : 400 }
       );
     }
 
