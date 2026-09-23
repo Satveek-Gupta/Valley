@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function fetchParticipantRegistrations(cleanEmail: string) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://cabinetvalley.in";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://valley.cabinetbu.tech";
   const eventsMap = new Map(EVENTS_DATA.map((e) => [e.slug, e]));
   const db = supabaseAdmin;
 
